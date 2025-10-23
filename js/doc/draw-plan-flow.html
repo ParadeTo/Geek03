@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan 模式流程图生成器</title>
+  <style>
+    body {
+      margin: 20px;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    #canvas {
+      border: 1px solid #ccc;
+      background: white;
+      display: block;
+      margin: 20px auto;
+    }
+    .controls {
+      text-align: center;
+      margin: 20px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #1976D2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 10px;
+    }
+    button:hover {
+      background: #1565C0;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h2>Plan 模式工作流程图</h2>
+    <button onclick="downloadImage()">下载图片</button>
+  </div>
+  <canvas id="canvas" width="1000" height="700"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const colors = {
+      nodeBg: '#E3F2FD',
+      nodeBorder: '#1976D2',
+      nodeText: '#0D47A1',
+      arrow: '#1976D2',
+      conditionBg: '#FFF9C4',
+      conditionBorder: '#F57C00',
+      startEnd: '#C8E6C9',
+      startEndBorder: '#388E3C',
+      planBg: '#F3E5F5',
+      planBorder: '#7B1FA2',
+    };
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function drawDiamond(ctx, x, y, width, height) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - height / 2);
+      ctx.lineTo(x + width / 2, y);
+      ctx.lineTo(x, y + height / 2);
+      ctx.lineTo(x - width / 2, y);
+      ctx.closePath();
+    }
+
+    function drawNode(x, y, width, height, text, bgColor, borderColor, textColor) {
+      ctx.save();
+      roundRect(ctx, x - width / 2, y - height / 2, width, height, 10);
+      ctx.fillStyle = bgColor;
+      ctx.fill();
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.fillStyle = textColor;
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const lines = text.split('\n');
+      const lineHeight = 24;
+      const startY = y - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x, startY + i * lineHeight);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawDecision(x, y, width, height, text) {
+      ctx.save();
+      drawDiamond(ctx, x, y, width, height);
+      ctx.fillStyle = colors.conditionBg;
+      ctx.fill();
+      ctx.strokeStyle = colors.conditionBorder;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#E65100';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const lines = text.split('\n');
+      const lineHeight = 20;
+      const startY = y - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x, startY + i * lineHeight);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawArrow(x1, y1, x2, y2, color = colors.arrow, label = '') {
+      const headlen = 15;
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(
+        x2 - headlen * Math.cos(angle - Math.PI / 6),
+        y2 - headlen * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        x2 - headlen * Math.cos(angle + Math.PI / 6),
+        y2 - headlen * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fill();
+      
+      if (label) {
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(midX - 25, midY - 12, 50, 24);
+        ctx.fillStyle = color;
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, midX, midY);
+      }
+      
+      ctx.restore();
+    }
+
+    function drawCurvedArrow(x1, y1, x2, y2, curvature = 50) {
+      const headlen = 15;
+      
+      ctx.save();
+      ctx.strokeStyle = colors.arrow;
+      ctx.fillStyle = colors.arrow;
+      ctx.lineWidth = 3;
+      
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+      const cpX = midX - curvature;
+      const cpY = midY;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo(cpX, cpY, x2, y2);
+      ctx.stroke();
+      
+      const angle = Math.atan2(y2 - cpY, x2 - cpX);
+      
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(
+        x2 - headlen * Math.cos(angle - Math.PI / 6),
+        y2 - headlen * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        x2 - headlen * Math.cos(angle + Math.PI / 6),
+        y2 - headlen * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.restore();
+    }
+
+    function drawTitle(text, y) {
+      ctx.save();
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, canvas.width / 2, y);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawTitle('Plan 模式工作流程', 40);
+
+      const startX = 500;
+      const startY = 120;
+      const planY = 240;
+      const executeY = 360;
+      const decisionY = 480;
+      const toolsY = 600;
+      const endY = 480;
+      const endX = 750;
+
+      // 开始节点
+      drawNode(startX, startY, 160, 60, '用户问题', 
+               colors.startEnd, colors.startEndBorder, '#1B5E20');
+
+      // 生成计划节点
+      drawNode(startX, planY, 200, 80, '生成计划\n(Plan)', 
+               colors.planBg, colors.planBorder, '#4A148C');
+
+      // 执行步骤节点
+      drawNode(startX, executeY, 200, 80, '执行步骤\n(Execute)', 
+               colors.nodeBg, colors.nodeBorder, colors.nodeText);
+
+      // 决策节点
+      drawDecision(startX, decisionY, 200, 120, '计划是否\n完成？');
+
+      // 调用工具节点
+      drawNode(startX, toolsY, 180, 80, '调用工具', 
+               colors.nodeBg, colors.nodeBorder, colors.nodeText);
+
+      // 结束节点
+      drawNode(endX, endY, 160, 60, '输出结果', 
+               colors.startEnd, colors.startEndBorder, '#1B5E20');
+
+      // 绘制箭头
+      // 开始 → 生成计划
+      drawArrow(startX, startY + 30, startX, planY - 40);
+      
+      // 生成计划 → 执行步骤
+      drawArrow(startX, planY + 40, startX, executeY - 40);
+      
+      // 执行步骤 → 判断
+      drawArrow(startX, executeY + 40, startX, decisionY - 60);
+      
+      // 判断 → 调用工具（否）
+      drawArrow(startX, decisionY + 60, startX, toolsY - 40, colors.arrow, '否');
+      
+      // 判断 → 结束（是）
+      drawArrow(startX + 100, decisionY, endX - 80, endY, colors.arrow, '是');
+      
+      // 调用工具 → 执行步骤（循环）
+      drawCurvedArrow(startX - 100, toolsY, startX - 100, executeY, 80);
+    }
+
+    function downloadImage() {
+      const link = document.createElement('a');
+      link.download = 'plan-workflow.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    draw();
+  </script>
+</body>
+</html>
+

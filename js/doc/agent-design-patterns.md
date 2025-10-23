@@ -371,63 +371,578 @@ const result = await agent.invoke({
 
 ## 二、CodeAct 模式
 
-### 2.1 CodeAct 的核心理念
-- 用代码作为统一的行动接口
-- 与 ReAct 的区别
+### 2.1 核心理念
 
-### 2.2 工作机制
-- 代码生成流程
-- 代码执行环境
-- 结果反馈机制
+**CodeAct = Code as Action**（代码即行动）
 
-### 2.3 优势与局限
-- 灵活性优势
-- 安全性考虑
-- 性能权衡
+与 ReAct 模式的关键区别：
+- **ReAct**：调用预定义工具（如 `get_closing_price('青岛啤酒')`）
+- **CodeAct**：生成并执行代码来完成任务
 
-### 2.4 实现架构
-- LLM 代码生成层
-- 沙箱执行环境
-- 工具函数库设计
+```
+ReAct:  Thought → Action(tool_name, args) → Observation
+CodeAct: Thought → Code Generation → Code Execution → Observation
+```
 
-### 2.5 实战案例
-- 典型应用场景
-- 代码实现细节
-- 最佳实践
+### 2.2 工作流程
 
----
+![CodeAct 工作流程](./images/codeact-workflow.png)
+
+1. **LLM 分析**：理解用户问题
+2. **生成代码**：编写 Python/JavaScript 代码
+3. **执行代码**：在沙箱环境中运行
+4. **结果反馈**：将执行结果返回给 LLM
+5. **循环或结束**：根据结果决定是否继续
+
+### 2.3 实战案例
+
+**需求：** 计算 1~100 的和
+
+#### 核心代码
+
+**1. 提示词（Prompt）**
+
+```typescript
+// prompts.ts
+export const SYSTEM_PROMPT = `你是一个能够编写和执行代码的智能助手。
+当用户提出问题时，你需要：
+1. 分析问题并确定需要编写什么代码
+2. 编写能解决问题的 JavaScript 代码
+3. 代码必须将最终结果存储在 'result' 变量中
+4. 将代码包裹在 \`\`\`javascript 代码块中
+5. 分析执行结果，如果有错误则修改代码再次执行
+6. 最终给用户提供答案`
+```
+
+**2. 工具（代码执行器）**
+
+```typescript
+// tools.ts
+import { z } from 'zod'
+import { tool } from '@langchain/core/tools'
+import vm from 'vm'
+
+export const executePythonTool = tool(
+  (input) => {
+    const code = (input as { code: string }).code
+    try {
+      console.log('执行代码:\n', code)
+      
+      // 使用 vm 创建沙箱环境
+      const context = { result: undefined, console }
+      vm.createContext(context)
+      vm.runInContext(code, context, { timeout: 5000 })
+      
+      const result = context.result ?? '执行成功'
+      console.log('执行结果:\n', result)
+      return String(result)
+    } catch (error: any) {
+      return `代码执行错误: ${error.message}`
+    }
+  },
+  {
+    name: 'execute_javascript',
+    description: '执行 JavaScript 代码并返回结果',
+    schema: z.object({
+      code: z.string().describe('要执行的 JavaScript 代码')
+    })
+  }
+)
+```
+
+**3. Agent 逻辑（LangGraph）**
+
+```typescript
+// graph.ts
+import { StateGraph, END } from '@langchain/langgraph'
+import { Annotation } from '@langchain/langgraph'
+import { ChatOpenAI } from '@langchain/openai'
+import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { SYSTEM_PROMPT } from './prompts'
+import { executePythonTool } from './tools'
+
+// 定义状态
+const CodeActState = Annotation.Root({
+  messages: Annotation<any[]>({
+    reducer: (x, y) => x.concat(y),
+    default: () => []
+  }),
+  output: Annotation<string>({ default: () => '' }),
+  userPrompt: Annotation<string>({ default: () => '' })
+})
+
+const llm = new ChatOpenAI({ model: 'gpt-4o' })
+
+// 提取代码
+function extractCode(content: string) {
+  if (content.includes('```javascript')) {
+    const blocks = content.split('```javascript')
+    const code = blocks[1].split('```')[0].trim()
+    return code
+  }
+  return null
+}
+
+// LLM 节点
+async function llmCall(state: typeof CodeActState.State) {
+  const messages = [
+    new SystemMessage(SYSTEM_PROMPT),
+    new HumanMessage(state.userPrompt),
+    ...state.messages
+  ]
+  
+  const response = await llm.invoke(messages)
+  const code = extractCode(response.content as string)
+  
+  if (code) {
+    return { 
+      messages: [response], 
+      output: '',
+      code 
+    }
+  }
+  
+  return { 
+    messages: [response], 
+    output: response.content 
+  }
+}
+
+// 路由函数
+function shouldExecute(state: typeof CodeActState.State) {
+  return state.output ? END : 'executeNode'
+}
+
+// 执行节点
+async function executeNode(state: typeof CodeActState.State) {
+  const code = (state as any).code
+  const result = await executePythonTool.invoke({ code })
+  
+  return {
+    messages: [
+      new HumanMessage(`## 执行结果:\n${result}`)
+    ]
+  }
+}
+
+// 构建图
+export function buildCodeActGraph() {
+  return new StateGraph(CodeActState)
+    .addNode('llmCall', llmCall)
+    .addNode('executeNode', executeNode)
+    .addEdge('__start__', 'llmCall')
+    .addConditionalEdges('llmCall', shouldExecute)
+    .addEdge('executeNode', 'llmCall')
+    .compile()
+}
+```
+
+**4. 运行**
+
+```typescript
+const agent = buildCodeActGraph()
+const result = await agent.invoke({
+  userPrompt: '请计算 1~100 的和'
+})
+console.log(result.output)
+```
+
+#### 运行效果
+
+```
+[启动 CodeAct Agent]
+[用户问题] 请计算 1~100 的和
+
+
+[LLM 节点] 分析问题...
+[生成代码]
+
+[执行节点] 运行代码...
+## 执行代码:
+ let n = 100;
+let result = (n * (n + 1)) / 2;
+result;
+## 执行结果:
+ 执行成功
+
+[LLM 节点] 分析问题...
+[直接给出答案]
+
+[完成]
+
+[最终答案]
+ 很好！结果表明，1 到 100 的和是 5050。您是否还有其他数学问题或需要进一步的帮助？
+```
+
+从结果可以看到，大模型并没有使用循环，而是用等差数列求和公式来实现的，有点聪明的样子。
 
 ## 三、计划模式（Plan Mode）
 
-### 3.1 计划模式概述
-- "先计划，后执行"的思想
-- Plan-and-Execute 框架
+### 3.1 核心理念
 
-### 3.2 两种计划模式实现
+**Plan Mode = Plan + Execute**（先计划，后执行）
 
-#### 3.2.1 简单计划模式
-- 一次性规划
-- 顺序执行
-- 适用场景
+与 ReAct 模式的关键区别：
+- **ReAct**：边思考边行动（Think → Act → Observe → Think...）
+- **Plan Mode**：先制定完整计划，再按计划执行（Plan → Execute → Execute → ...）
 
-#### 3.2.2 高级计划模式
-- 动态调整计划
-- 并行任务处理
-- 计划重新评估机制
+```
+ReAct:    每步决策 → 适合探索性任务
+Plan:     先规划再执行 → 适合结构化任务
+```
 
-### 3.3 计划生成策略
-- 任务分解技术
-- 依赖关系处理
-- 优先级排序
+**优势：**
+- 更清晰的执行路径
+- 便于进度监控
+- 可预测的资源消耗
+- 易于调试和优化
 
-### 3.4 执行与监控
-- 执行进度跟踪
-- 异常处理
-- 结果汇总
+**劣势：**
+- 灵活性较低
+- 计划可能不够准确
+- 无法应对突发情况
 
-### 3.5 实战案例
-- 复杂任务规划示例
-- 对比简单模式与高级模式
+### 3.2 工作流程
+
+![Plan 工作流程](./images/plan-workflow.png)
+
+### 3.3 实战案例：简单计划模式
+
+**需求：** 比较茅台和青岛啤酒哪个贵？
+
+#### 核心代码
+
+**1. 计划生成提示词**
+
+```typescript
+// prompts.ts
+export const PLAN_PROMPT = `你是一个金融分析师，擅长对股票的收盘价进行比较。
+请为用户提出的问题创建分析方案步骤：
+
+可调用工具列表：
+get_closing_price: 根据股票名称获取收盘价
+
+要求：
+1. 用中文列出清晰步骤
+2. 每个步骤标记序号
+3. 明确说明需要分析和执行的内容
+4. 只需输出计划内容，不要做任何额外的解释和说明`
+
+export const PLAN_EXECUTE_PROMPT = `你是一个思路清晰，有条理的金融分析师，
+必须严格按照以下计划执行：
+
+当前计划：
+{plan}
+
+如果你认为计划已经执行到最后一步了，请在内容的末尾加上 Final Answer 字样`
+```
+
+**2. 状态定义**
+
+```typescript
+// types.ts
+export const PlanState = Annotation.Root({
+  messages: Annotation<BaseMessage[]>({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
+  plan: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+    default: () => '',
+  }),
+})
+```
+
+**3. 工作流构建**
+
+```typescript
+// graph.ts
+// 计划节点：生成执行计划
+async function planNode(state: typeof PlanState.State) {
+  const response = await llm.invoke([
+    new SystemMessage(PLAN_PROMPT),
+    state.messages[0],
+  ])
+  
+  const plan = response.content as string
+  console.log('[计划内容]\n', plan)
+  
+  return {plan}
+}
+
+// 执行节点：按计划执行并调用工具
+async function executeNode(state: typeof PlanState.State) {
+  const messages = [
+    new SystemMessage(PLAN_EXECUTE_PROMPT.replace('{plan}', state.plan)),
+    ...state.messages,
+  ]
+  
+  const response = await llmWithTools.invoke(messages)
+  return {messages: [response]}
+}
+
+// 工具节点：执行工具调用
+async function toolNode(state: typeof PlanState.State) {
+  const lastMessage = state.messages[state.messages.length - 1]
+  const toolCalls = lastMessage.tool_calls || []
+  
+  const toolMessages = await Promise.all(
+    toolCalls.map(async (tc) => {
+      const tool = toolsByName[tc.name]
+      const result = await tool.invoke(tc.args)
+      return new ToolMessage({
+        content: String(result),
+        tool_call_id: tc.id
+      })
+    })
+  )
+  
+  return {messages: toolMessages}
+}
+
+// 路由函数
+function shouldContinue(state: typeof PlanState.State): string {
+  const content = state.messages[state.messages.length - 1].content
+  return content.includes('Final Answer') ? END : 'toolNode'
+}
+
+// 构建图
+export function buildPlanGraph() {
+  return new StateGraph(PlanState)
+    .addNode('planNode', planNode)
+    .addNode('executeNode', executeNode)
+    .addNode('toolNode', toolNode)
+    .addEdge('__start__', 'planNode')
+    .addEdge('planNode', 'executeNode')
+    .addConditionalEdges('executeNode', shouldContinue)
+    .addEdge('toolNode', 'executeNode')
+    .compile()
+}
+```
+
+#### 运行效果
+
+```
+[启动计划模式 Agent]
+[用户问题] 茅台和青岛啤酒哪个贵？
+
+[计划节点] 生成执行计划...
+[计划内容]
+1. 获取贵州茅台的股票收盘价
+2. 获取青岛啤酒的股票收盘价
+3. 比较两者的收盘价，确定哪个更贵
+
+[执行节点] 按计划执行...
+[工具节点] 执行工具...
+   执行: get_closing_price({"name":"贵州茅台"})
+   结果: 1488.21
+
+[执行节点] 按计划执行...
+[工具节点] 执行工具...
+   执行: get_closing_price({"name":"青岛啤酒"})
+   结果: 67.92
+
+[执行节点] 按计划执行...
+[完成]
+
+[最终答案]
+根据收盘价比较：
+- 贵州茅台：1488.21 元
+- 青岛啤酒：67.92 元
+
+结论：贵州茅台更贵
+Final Answer
+```
+
+### 3.4 Plan vs ReAct vs CodeAct
+
+| 特性 | ReAct | CodeAct | Plan |
+|-----|-------|---------|------|
+| **决策方式** | 实时决策 | 实时决策 | 预先规划 |
+| **灵活性** | 高 | 极高 | 低 |
+| **可预测性** | 低 | 低 | 高 |
+| **执行效率** | 中 | 高 | 中 |
+| **调试难度** | 中 | 高 | 低 |
+| **适用场景** | 探索性任务 | 计算密集任务 | 结构化任务 |
+
+### 3.5 何时使用计划模式？
+
+**适合：**
+- 任务步骤明确、结构化
+- 需要预估资源消耗
+- 需要进度监控和汇报
+- 多步骤协调任务
+
+**不适合：**
+- 探索性、不确定性高的任务
+- 需要根据结果动态调整的任务
+- 实时交互场景
+
+### 3.6 高级计划模式：动态调整
+
+简单计划模式的局限是**计划一旦生成就固定不变**。高级计划模式引入了**动态重新规划**能力，可以根据执行结果调整剩余步骤。
+
+#### 核心改进
+
+| 特性 | 简单模式 | 高级模式 |
+|-----|---------|---------|
+| **计划调整** | 固定不变 | 动态调整 |
+| **执行历史** | 无 | 记录所有步骤 |
+| **步骤执行** | 直接工具调用 | 使用 ReAct Agent |
+| **输出格式** | 文本判断 | 结构化输出 |
+| **复杂度** | 低 | 中高 |
+
+#### 关键技术
+
+**1. 结构化输出（Zod Schema）**
+
+```typescript
+// 定义输出类型：要么是计划，要么是最终答案
+export const ActionSchema = z.union([
+  z.object({
+    type: z.literal('plan'),
+    steps: z.array(z.string()),  // 剩余步骤
+  }),
+  z.object({
+    type: z.literal('response'),
+    response: z.string(),         // 最终答案
+  }),
+])
+
+// 使用结构化输出
+const plannerLlm = llm.withStructuredOutput(ActionSchema)
+```
+
+**2. 执行历史跟踪**
+
+```typescript
+// 状态中记录所有已完成的步骤
+pastSteps: Annotation<Array<[string, string]>>({
+  reducer: (x, y) => x.concat(y),  // 累加历史
+  default: () => [],
+})
+
+// 每次执行后添加历史
+return {
+  pastSteps: [[task, result]] as Array<[string, string]>,
+}
+```
+
+**3. 使用 ReAct Agent 执行单步**
+
+```typescript
+// 创建 ReAct Agent 作为执行器
+const executeAgent = createReactAgent({
+  llm,
+  tools,
+  messageModifier: SYSTEM_PROMPT,
+})
+
+// 执行单个步骤
+const agentResponse = await executeAgent.invoke({
+  messages: [['user', taskFormatted]],
+})
+```
+
+#### 工作流程
+
+```
+初始计划: [步骤1, 步骤2, 步骤3]
+    ↓
+执行步骤1 (使用 ReAct Agent)
+    ↓
+记录历史: [(步骤1, 结果1)]
+    ↓
+规划评估: 根据结果决定
+    ├─ 调整计划 → [步骤2', 步骤3']  (可能修改)
+    └─ 或返回最终答案
+    ↓
+继续执行或结束
+```
+
+#### 代码示例
+
+```typescript
+// 规划评估节点
+async function planStep(state: typeof PlanExecuteState.State) {
+  // 格式化当前状态
+  const planStr = state.plan.map((step, i) => `${i + 1}. ${step}`).join('\n')
+  const pastStepsStr = state.pastSteps
+    .map(([task, result]) => `- ${task}: ${result}`)
+    .join('\n')
+
+  const prompt = PLAN_PROMPT
+    .replace('{input}', state.input)
+    .replace('{plan}', planStr)
+    .replace('{past_steps}', pastStepsStr || '无')
+
+  // 获取结构化输出
+  const output = await plannerLlm.invoke(prompt)
+
+  if (output.type === 'response') {
+    // 所有步骤完成
+    return {response: output.response}
+  } else {
+    // 返回调整后的计划
+    return {plan: output.steps}
+  }
+}
+```
+
+#### 运行示例
+
+```bash
+npm run plan:advanced
+```
+
+```
+[启动高级计划模式 Agent]
+[目标] 完成所有计划后输出DONE
+[初始计划]
+  1. 获取青岛啤酒的股票收盘价
+  2. 获取贵州茅台的股票收盘价
+  3. 比较两者，得出结论
+
+[执行节点] 执行当前步骤...
+[任务] 你需要执行 步骤1. 获取青岛啤酒的股票收盘价
+[执行结果] 青岛啤酒的收盘价是 67.92
+
+[规划节点] 评估计划...
+[决策] 还需执行 2 个步骤
+[剩余计划]
+  1. 获取贵州茅台的股票收盘价
+  2. 比较两者，得出结论
+
+[执行节点] 执行当前步骤...
+[执行结果] 贵州茅台的收盘价是 1488.21
+
+[规划节点] 评估计划...
+[决策] 还需执行 1 个步骤
+[剩余计划]
+  1. 比较两者，得出结论
+
+[执行节点] 执行当前步骤...
+[执行结果] 贵州茅台（1488.21）远高于青岛啤酒（67.92）
+
+[规划节点] 评估计划...
+[决策] 所有步骤完成，返回最终答案
+
+[完成]
+[最终答案] 根据比较结果，贵州茅台更贵。DONE
+```
+
+#### 何时使用高级模式？
+
+**适合：**
+- 复杂、多步骤的任务
+- 需要根据中间结果调整策略
+- 需要详细的执行记录和可追溯性
+- 对可靠性要求高的生产环境
+
+**不适合：**
+- 简单、固定步骤的任务（用简单模式）
+- 对响应速度要求极高的场景
+- 计划非常明确不需要调整的任务
 
 ---
 

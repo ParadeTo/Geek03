@@ -13,6 +13,9 @@
     "fc:stream": "ts-node src/react-function-call/functioncalling-stream.ts",
     "graph:dev": "ts-node src/react-langgraph/index.ts",
     "graph:manual": "ts-node src/react-langgraph-manual/index.ts",
+    "codeact:dev": "ts-node src/codeact/index.ts",
+    "plan:simple": "ts-node src/planmode-simple/index.ts",
+    "plan:advanced": "ts-node src/planmode-advanced/index.ts",
     "clean": "rm -rf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
