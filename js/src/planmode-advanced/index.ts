@@ -1,12 +1,11 @@
 import {runAdvancedPlanAgent} from './graph'
 
 async function main() {
-  const input = '完成所有计划后输出DONE'
-  const plan = [
-    '获取青岛啤酒的股票收盘价',
-    '获取贵州茅台的股票收盘价',
-    '比较青岛啤酒与贵州茅台的股票收盘价，得出哪个更贵的结论',
-  ]
+  // 设计一个需要动态调整的复杂任务
+  const input = `仅根据收盘价帮我分析一下青岛啤酒和贵州茅台的投资价值对比，低的更有价值`
+
+  // 初始计划故意不完整，让 Agent 根据实际情况动态调整
+  const plan = ['获取青岛啤酒的股票收盘价']
 
   try {
     const result = await runAdvancedPlanAgent(input, plan)

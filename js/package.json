@@ -16,6 +16,8 @@
     "codeact:dev": "ts-node src/codeact/index.ts",
     "plan:simple": "ts-node src/planmode-simple/index.ts",
     "plan:advanced": "ts-node src/planmode-advanced/index.ts",
+    "reflection:dev": "ts-node src/reflection/index.ts",
+    "human:dev": "ts-node src/human-in-loop/index.ts",
     "clean": "rm -rf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

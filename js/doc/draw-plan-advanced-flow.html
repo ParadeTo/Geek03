@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高级计划模式流程图</title>
+  <style>
+    body {
+      margin: 20px;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    #canvas {
+      border: 1px solid #ccc;
+      background: white;
+      display: block;
+      margin: 20px auto;
+    }
+    .controls {
+      text-align: center;
+      margin: 20px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #1976D2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1565C0;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h2>高级计划模式工作流程图</h2>
+    <button onclick="downloadImage()">💾 下载图片</button>
+  </div>
+  <canvas id="canvas" width="800" height="900"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 颜色定义（与 ReAct 保持一致的风格）
+    const colors = {
+      start: '#E3F2FD',
+      execute: '#FFF9C4',
+      planstep: '#FFECB3',
+      decision: '#E1BEE7',
+      end: '#C8E6C9',
+      loop: '#FF5722',
+      border: '#333333',
+    };
+
+    // 绘制圆角矩形
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // 绘制节点
+    function drawNode(x, y, w, h, text, subText, bgColor) {
+      ctx.save();
+      roundRect(ctx, x, y, w, h, 8);
+      ctx.fillStyle = bgColor;
+      ctx.fill();
+      ctx.strokeStyle = colors.border;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const mainY = subText ? y + h / 2 - 10 : y + h / 2;
+      ctx.fillText(text, x + w / 2, mainY);
+      
+      if (subText) {
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#666666';
+        ctx.fillText(subText, x + w / 2, y + h / 2 + 15);
+      }
+      
+      ctx.restore();
+    }
+
+    // 绘制菱形
+    function drawDiamond(x, y, w, h, text, bgColor) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x + w / 2, y);
+      ctx.lineTo(x + w, y + h / 2);
+      ctx.lineTo(x + w / 2, y + h);
+      ctx.lineTo(x, y + h / 2);
+      ctx.closePath();
+      
+      ctx.fillStyle = bgColor;
+      ctx.fill();
+      ctx.strokeStyle = colors.border;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 18px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + w / 2, y + h / 2);
+      
+      ctx.restore();
+    }
+
+    // 绘制箭头
+    function drawArrow(x1, y1, x2, y2, color = '#333333', lineWidth = 3) {
+      const headlen = 15;
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = lineWidth;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(
+        x2 - headlen * Math.cos(angle - Math.PI / 6),
+        y2 - headlen * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        x2 - headlen * Math.cos(angle + Math.PI / 6),
+        y2 - headlen * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.restore();
+    }
+
+    // 绘制文本标签
+    function drawLabel(x, y, text, color = '#000000', size = 18) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = `bold ${size}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    // 绘制流程图
+    function draw() {
+      // 填充白色背景
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 节点配置
+      const nodeWidth = 240;
+      const nodeHeight = 90;
+      const centerX = 400;
+      
+      const nodes = {
+        start: { x: centerX - nodeWidth / 2, y: 80 },
+        execute: { x: centerX - nodeWidth / 2, y: 220 },
+        planstep: { x: centerX - nodeWidth / 2, y: 380 },
+        decision: { x: centerX - 60, y: 540 },
+        end: { x: centerX - nodeWidth / 2, y: 730 }
+      };
+
+      // 绘制节点
+      drawNode(
+        nodes.start.x, nodes.start.y, nodeWidth, nodeHeight,
+        '初始计划',
+        '[步骤1, 步骤2, 步骤3]',
+        colors.start
+      );
+
+      drawNode(
+        nodes.execute.x, nodes.execute.y, nodeWidth, nodeHeight,
+        'Execute 执行',
+        '使用 ReAct Agent',
+        colors.execute
+      );
+
+      drawNode(
+        nodes.planstep.x, nodes.planstep.y, nodeWidth, nodeHeight,
+        'Plan Step 规划评估',
+        '分析结果，动态调整',
+        colors.planstep
+      );
+
+      drawDiamond(
+        nodes.decision.x, nodes.decision.y, 120, 100,
+        '完成？',
+        colors.decision
+      );
+
+      drawNode(
+        nodes.end.x, nodes.end.y, nodeWidth, nodeHeight,
+        '返回最终答案',
+        'Response',
+        colors.end
+      );
+
+      // 绘制主流程箭头
+      // 开始 -> 执行
+      drawArrow(
+        centerX, nodes.start.y + nodeHeight,
+        centerX, nodes.execute.y
+      );
+
+      // 执行 -> 规划
+      drawArrow(
+        centerX, nodes.execute.y + nodeHeight,
+        centerX, nodes.planstep.y
+      );
+    //   drawLabel(centerX + 100, nodes.execute.y + nodeHeight + 80, '记录历史', '#666666', 16);
+
+      // 规划 -> 决策
+      drawArrow(
+        centerX, nodes.planstep.y + nodeHeight,
+        centerX, nodes.decision.y
+      );
+
+      // 决策 -> 结束（是）
+      drawArrow(
+        centerX, nodes.decision.y + 100,
+        centerX, nodes.end.y
+      );
+      drawLabel(centerX + 50, nodes.end.y - 40, '是', '#4CAF50', 20);
+
+      // 决策 -> 执行（否，循环）
+      ctx.save();
+      ctx.strokeStyle = colors.loop;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(nodes.decision.x, nodes.decision.y + 50);
+      ctx.lineTo(100, nodes.decision.y + 50);
+      ctx.lineTo(100, nodes.execute.y + nodeHeight / 2);
+      ctx.lineTo(nodes.execute.x, nodes.execute.y + nodeHeight / 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // 循环箭头头部（向右指向 Execute）
+      const arrowX = nodes.execute.x;
+      const arrowY = nodes.execute.y + nodeHeight / 2;
+      ctx.save();
+      ctx.fillStyle = colors.loop;
+      ctx.beginPath();
+      ctx.moveTo(arrowX, arrowY);
+      ctx.lineTo(arrowX - 15, arrowY - 8);
+      ctx.lineTo(arrowX - 15, arrowY + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      drawLabel(150, nodes.execute.y + nodeHeight / 2 - 30, '否（继续）', colors.loop, 18);
+      drawLabel(162, nodes.execute.y + nodeHeight / 2 + 45, '执行调整后计划', colors.loop, 16);
+    }
+
+    // 下载图片
+    function downloadImage() {
+      const link = document.createElement('a');
+      link.download = 'plan-advanced-workflow.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // 页面加载时绘制
+    draw();
+  </script>
+</body>
+</html>

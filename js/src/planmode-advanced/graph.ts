@@ -1,9 +1,9 @@
 import {StateGraph, END} from '@langchain/langgraph'
-import {ChatOpenAI} from '@langchain/openai'
 import {createReactAgent} from '@langchain/langgraph/prebuilt'
+import {ChatOpenAI} from '@langchain/openai'
 import {SYSTEM_PROMPT, PLAN_PROMPT} from './prompts'
 import {tools} from './tools'
-import {PlanExecuteState, ActionSchema, type ActionType} from './types'
+import {PlanExecuteState} from './types'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
@@ -16,19 +16,14 @@ const llm = new ChatOpenAI({
   },
 })
 
-// 创建执行 Agent（使用 ReAct）
+// 使用 createReactAgent 创建执行 Agent
 const executeAgent = createReactAgent({
   llm,
   tools,
   messageModifier: SYSTEM_PROMPT,
 })
 
-// 创建规划 LLM（使用结构化输出）
-const plannerLlm = llm.withStructuredOutput(ActionSchema, {
-  name: 'action',
-})
-
-// 执行步骤节点
+// 执行步骤节点（使用 createReactAgent）
 async function executeStep(state: typeof PlanExecuteState.State) {
   console.log('\n[执行节点] 执行当前步骤...')
 
@@ -48,7 +43,7 @@ async function executeStep(state: typeof PlanExecuteState.State) {
   })
 
   const lastMessage = agentResponse.messages[agentResponse.messages.length - 1]
-  const result = lastMessage.content as string
+  const result = lastMessage?.content as string
 
   console.log(`[执行结果] ${result}`)
 
@@ -59,30 +54,64 @@ async function executeStep(state: typeof PlanExecuteState.State) {
 
 // 规划步骤节点
 async function planStep(state: typeof PlanExecuteState.State) {
-  console.log('\n[规划节点] 评估计划...')
+  console.log('\n[规划节点] 评估并调整计划...')
 
   const planStr = state.plan.map((step, i) => `${i + 1}. ${step}`).join('\n')
   const pastStepsStr = state.pastSteps
-    .map(([task, result]) => `- ${task}: ${result}`)
+    .map(([task, result]) => `- ${task}\n  结果: ${result}`)
     .join('\n')
 
   const prompt = PLAN_PROMPT.replace('{input}', state.input)
     .replace('{plan}', planStr)
     .replace('{past_steps}', pastStepsStr || '无')
 
-  const output = (await plannerLlm.invoke(prompt)) as ActionType
+  const response = await llm.invoke(prompt)
+  const content = response.content as string
 
-  if (output.type === 'response') {
-    console.log('[决策] 所有步骤完成，返回最终答案')
-    return {response: output.response}
-  } else {
-    console.log(`[决策] 还需执行 ${output.steps.length} 个步骤`)
-    console.log('[剩余计划]')
-    output.steps.forEach((step, i) => {
-      console.log(`  ${i + 1}. ${step}`)
-    })
-    return {plan: output.steps}
+  console.log(`[LLM 评估]\n${content}\n`)
+
+  // 先尝试提取步骤列表
+  const newPlan = extractPlanFromResponse(content)
+
+  // 如果提取到了步骤，继续执行
+  if (newPlan.length > 0) {
+    // 对比原计划，显示调整情况
+    const originalRemaining = state.plan.slice(1)
+    if (JSON.stringify(newPlan) !== JSON.stringify(originalRemaining)) {
+      console.log('[计划调整] 检测到计划变更')
+      console.log('[原计划剩余步骤]')
+      originalRemaining.forEach((step, i) => console.log(`  ${i + 1}. ${step}`))
+      console.log('[调整后的计划]')
+      newPlan.forEach((step, i) => console.log(`  ${i + 1}. ${step}`))
+    } else {
+      console.log(`[决策] 继续执行，剩余 ${newPlan.length} 步`)
+    }
+    return {plan: newPlan}
   }
+
+  // 没有提取到步骤，判断为任务完成
+  console.log('[决策] 无后续步骤，任务完成')
+  return {response: content}
+}
+
+// 从 LLM 响应中提取计划步骤
+function extractPlanFromResponse(response: string): string[] {
+  const lines = response.split('\n')
+  const steps: string[] = []
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    // 匹配 "- 步骤" 或 "1. 步骤" 格式
+    if (trimmed.match(/^[-*]\s+(.+)$/)) {
+      const step = trimmed.replace(/^[-*]\s+/, '').trim()
+      if (step) steps.push(step)
+    } else if (trimmed.match(/^\d+[\.)]\s+(.+)$/)) {
+      const step = trimmed.replace(/^\d+[\.)]\s+/, '').trim()
+      if (step) steps.push(step)
+    }
+  }
+
+  return steps
 }
 
 // 路由函数
@@ -122,15 +151,10 @@ export async function runAdvancedPlanAgent(
 
   const app = buildAdvancedPlanGraph()
 
-  const result = await app.invoke(
-    {
-      input,
-      plan: initialPlan,
-    } as any,
-    {
-      recursionLimit: 50,
-    }
-  )
+  const result = await app.invoke({
+    input,
+    plan: initialPlan,
+  } as any)
 
   console.log('\n[完成]\n')
   return result.response || '未完成'

@@ -45,21 +45,6 @@ planmode-advanced/
 
 ## 核心代码
 
-### 结构化输出 Schema
-
-```typescript
-export const ActionSchema = z.union([
-  z.object({
-    type: z.literal('plan'),
-    steps: z.array(z.string()),
-  }),
-  z.object({
-    type: z.literal('response'),
-    response: z.string(),
-  }),
-])
-```
-
 ### 状态定义
 
 ```typescript
@@ -73,6 +58,50 @@ export const PlanExecuteState = Annotation.Root({
 })
 ```
 
+### 规划评估节点（关键）
+
+```typescript
+async function planStep(state: typeof PlanExecuteState.State) {
+  // 1. 构建评估提示词（包含任务、原计划、执行历史）
+  const prompt = PLAN_PROMPT
+    .replace('{input}', state.input)
+    .replace('{plan}', planStr)
+    .replace('{past_steps}', pastStepsStr)
+
+  // 2. LLM 分析并生成新计划
+  const response = await llm.invoke(prompt)
+  const content = response.content as string
+
+  // 3. 从 LLM 输出中提取新计划
+  const newPlan = extractPlanFromResponse(content)
+
+  // 4. 对比并显示计划调整
+  if (newPlan !== originalPlan) {
+    console.log('[计划调整] 检测到计划变更')
+  }
+
+  return {plan: newPlan}
+}
+```
+
+### 执行节点（使用 createReactAgent）
+
+```typescript
+const executeAgent = createReactAgent({
+  llm,
+  tools,
+  messageModifier: SYSTEM_PROMPT,
+})
+
+async function executeStep(state) {
+  const task = state.plan[0]
+  const result = await executeAgent.invoke({
+    messages: [['user', task]],
+  })
+  return {pastSteps: [[task, result]]}
+}
+```
+
 ## 运行
 
 ```bash
@@ -81,20 +110,49 @@ npm run plan:advanced
 
 ## 示例
 
-**输入：**
-- 目标：完成所有计划后输出DONE
-- 初始计划：
-  1. 获取青岛啤酒的股票收盘价
-  2. 获取贵州茅台的股票收盘价
-  3. 比较两者，得出结论
+### 场景：动态计划调整
 
-**执行过程：**
-1. 执行步骤1 → 获得青岛啤酒价格: 67.92
-2. 规划评估 → 还需执行步骤2和3
-3. 执行步骤2 → 获得贵州茅台价格: 1488.21
-4. 规划评估 → 还需执行步骤3
-5. 执行步骤3 → 比较结果: 茅台更贵
-6. 规划评估 → 所有步骤完成，输出最终答案
+**输入：**
+```
+目标：分析青岛啤酒和贵州茅台的投资价值对比
+规则：
+1. 如果价格相差超过 1000 元，需计算差异百分比
+2. 如果价格接近（< 1000 元），无需额外计算
+3. 最后给出投资建议
+
+初始计划（故意不完整）：
+1. 获取青岛啤酒的股票收盘价
+2. 获取贵州茅台的股票收盘价
+3. 对比两者价格差异
+```
+
+**执行过程（体现动态调整）：**
+
+1. **执行步骤1** → 青岛啤酒价格: 67.92 元
+
+2. **规划评估** → 继续执行步骤2、3
+
+3. **执行步骤2** → 贵州茅台价格: 1488.21 元
+
+4. **规划评估（关键调整）**
+   - LLM 分析：价格相差 1420.29 元 > 1000 元
+   - **动态调整计划**：
+     ```
+     原计划: [对比两者价格差异]
+     调整为: 
+       - 计算价格差异（1488.21 - 67.92）
+       - 计算差异百分比
+       - 给出投资建议
+     ```
+
+5. **执行调整后的步骤** → 使用 calculator 工具计算
+
+6. **最终完成** → 输出分析报告
+
+**关键点：**
+- 初始计划没有"计算百分比"步骤
+- LLM 根据实际价格差异，自动添加了计算步骤
+- 体现了真正的动态规划能力
 
 ## 适用场景
 
