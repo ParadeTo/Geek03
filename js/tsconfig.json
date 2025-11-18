@@ -7,7 +7,7 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "commonjs",
+    "module": "node16",
     "target": "es2020",
     "lib": ["es2020"],
     "types": ["node"],
@@ -20,7 +20,7 @@
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    // "exactOptionalPropertyTypes": true,
 
     // Style Options
     // "noImplicitReturns": true,
@@ -36,8 +36,8 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
+    // "isolatedModules": true,
+    // "moduleDetection": "force",
     "skipLibCheck": true
   }
 }

@@ -28,7 +28,6 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      margin: 0 10px;
     }
     button:hover {
       background: #1565C0;
@@ -40,7 +39,7 @@
     <h2>Plan 模式工作流程图</h2>
     <button onclick="downloadImage()">下载图片</button>
   </div>
-  <canvas id="canvas" width="1000" height="700"></canvas>
+  <canvas id="canvas" width="1000" height="600"></canvas>
 
   <script>
     const canvas = document.getElementById('canvas');
@@ -49,14 +48,15 @@
     const colors = {
       nodeBg: '#E3F2FD',
       nodeBorder: '#1976D2',
-      nodeText: '#0D47A1',
-      arrow: '#1976D2',
-      conditionBg: '#FFF9C4',
+      conditionBg: '#FFE0B2',
       conditionBorder: '#F57C00',
       startEnd: '#C8E6C9',
       startEndBorder: '#388E3C',
       planBg: '#F3E5F5',
       planBorder: '#7B1FA2',
+      arrow: '#333333',
+      loopArrow: '#1976D2',
+      text: '#000000',
     };
 
     function roundRect(ctx, x, y, width, height, radius) {
@@ -82,22 +82,22 @@
       ctx.closePath();
     }
 
-    function drawNode(x, y, width, height, text, bgColor, borderColor, textColor) {
+    function drawNode(x, y, width, height, text, bgColor, borderColor) {
       ctx.save();
-      roundRect(ctx, x - width / 2, y - height / 2, width, height, 10);
+      roundRect(ctx, x - width / 2, y - height / 2, width, height, 8);
       ctx.fillStyle = bgColor;
       ctx.fill();
       ctx.strokeStyle = borderColor;
       ctx.lineWidth = 3;
       ctx.stroke();
       
-      ctx.fillStyle = textColor;
-      ctx.font = 'bold 20px Arial';
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
       const lines = text.split('\n');
-      const lineHeight = 24;
+      const lineHeight = 22;
       const startY = y - ((lines.length - 1) * lineHeight) / 2;
       
       lines.forEach((line, i) => {
@@ -116,8 +116,8 @@
       ctx.lineWidth = 3;
       ctx.stroke();
       
-      ctx.fillStyle = '#E65100';
-      ctx.font = 'bold 16px Arial';
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
@@ -132,7 +132,7 @@
       ctx.restore();
     }
 
-    function drawArrow(x1, y1, x2, y2, color = colors.arrow, label = '') {
+    function drawArrow(x1, y1, x2, y2, color = colors.arrow) {
       const headlen = 15;
       const angle = Math.atan2(y2 - y1, x2 - x1);
       
@@ -159,63 +159,6 @@
       ctx.closePath();
       ctx.fill();
       
-      if (label) {
-        const midX = (x1 + x2) / 2;
-        const midY = (y1 + y2) / 2;
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(midX - 25, midY - 12, 50, 24);
-        ctx.fillStyle = color;
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label, midX, midY);
-      }
-      
-      ctx.restore();
-    }
-
-    function drawCurvedArrow(x1, y1, x2, y2, curvature = 50) {
-      const headlen = 15;
-      
-      ctx.save();
-      ctx.strokeStyle = colors.arrow;
-      ctx.fillStyle = colors.arrow;
-      ctx.lineWidth = 3;
-      
-      const midX = (x1 + x2) / 2;
-      const midY = (y1 + y2) / 2;
-      const cpX = midX - curvature;
-      const cpY = midY;
-      
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo(cpX, cpY, x2, y2);
-      ctx.stroke();
-      
-      const angle = Math.atan2(y2 - cpY, x2 - cpX);
-      
-      ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(
-        x2 - headlen * Math.cos(angle - Math.PI / 6),
-        y2 - headlen * Math.sin(angle - Math.PI / 6)
-      );
-      ctx.lineTo(
-        x2 - headlen * Math.cos(angle + Math.PI / 6),
-        y2 - headlen * Math.sin(angle + Math.PI / 6)
-      );
-      ctx.closePath();
-      ctx.fill();
-      
-      ctx.restore();
-    }
-
-    function drawTitle(text, y) {
-      ctx.save();
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 28px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(text, canvas.width / 2, y);
       ctx.restore();
     }
 
@@ -223,58 +166,49 @@
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      drawTitle('Plan 模式工作流程', 40);
-
-      const startX = 500;
-      const startY = 120;
-      const planY = 240;
-      const executeY = 360;
+      const centerX = 500;
+      const startY = 80;
+      const planY = 200;
+      const executeY = 340;
       const decisionY = 480;
-      const toolsY = 600;
-      const endY = 480;
       const endX = 750;
+      const endY = 340;
 
       // 开始节点
-      drawNode(startX, startY, 160, 60, '用户问题', 
-               colors.startEnd, colors.startEndBorder, '#1B5E20');
+      drawNode(centerX, startY, 160, 60, '用户问题', colors.startEnd, colors.startEndBorder);
 
-      // 生成计划节点
-      drawNode(startX, planY, 200, 80, '生成计划\n(Plan)', 
-               colors.planBg, colors.planBorder, '#4A148C');
+      // 制定计划节点
+      drawNode(centerX, planY, 180, 70, '制定计划', colors.planBg, colors.planBorder);
 
       // 执行步骤节点
-      drawNode(startX, executeY, 200, 80, '执行步骤\n(Execute)', 
-               colors.nodeBg, colors.nodeBorder, colors.nodeText);
+      drawNode(centerX, executeY, 180, 70, '执行步骤', colors.nodeBg, colors.nodeBorder);
 
-      // 决策节点
-      drawDecision(startX, decisionY, 200, 120, '计划是否\n完成？');
-
-      // 调用工具节点
-      drawNode(startX, toolsY, 180, 80, '调用工具', 
-               colors.nodeBg, colors.nodeBorder, colors.nodeText);
+      // 判断节点
+      drawDecision(centerX, decisionY, 180, 100, '计划\n完成？');
 
       // 结束节点
-      drawNode(endX, endY, 160, 60, '输出结果', 
-               colors.startEnd, colors.startEndBorder, '#1B5E20');
+      drawNode(endX, endY, 160, 60, '输出结果', colors.startEnd, colors.startEndBorder);
 
       // 绘制箭头
-      // 开始 → 生成计划
-      drawArrow(startX, startY + 30, startX, planY - 40);
+      drawArrow(centerX, startY + 30, centerX, planY - 35);
+      drawArrow(centerX, planY + 35, centerX, executeY - 35);
+      drawArrow(centerX, executeY + 35, centerX, decisionY - 50);
       
-      // 生成计划 → 执行步骤
-      drawArrow(startX, planY + 40, startX, executeY - 40);
+      // 否 - 继续执行
+      ctx.save();
+      ctx.strokeStyle = colors.loopArrow;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 90, decisionY);
+      ctx.lineTo(300, decisionY);
+      ctx.lineTo(300, executeY);
+      ctx.lineTo(centerX - 90, executeY);
+      ctx.stroke();
+      ctx.restore();
+      drawArrow(310, executeY, centerX - 90, executeY, colors.loopArrow);
       
-      // 执行步骤 → 判断
-      drawArrow(startX, executeY + 40, startX, decisionY - 60);
-      
-      // 判断 → 调用工具（否）
-      drawArrow(startX, decisionY + 60, startX, toolsY - 40, colors.arrow, '否');
-      
-      // 判断 → 结束（是）
-      drawArrow(startX + 100, decisionY, endX - 80, endY, colors.arrow, '是');
-      
-      // 调用工具 → 执行步骤（循环）
-      drawCurvedArrow(startX - 100, toolsY, startX - 100, executeY, 80);
+      // 是 - 结束
+      drawArrow(centerX + 90, decisionY, endX - 80, endY);
     }
 
     function downloadImage() {
@@ -288,4 +222,3 @@
   </script>
 </body>
 </html>
-

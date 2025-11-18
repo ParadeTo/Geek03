@@ -53,7 +53,7 @@ async function humanNode(state: HumanLoopStateType) {
   console.log('[用户输入]', userInput)
 
   const toolMessage = new ToolMessage({
-    tool_call_id: toolCall.id,
+    tool_call_id: toolCall.id || '',
     content: String(userInput),
   })
 
@@ -73,7 +73,7 @@ async function toolNode(state: HumanLoopStateType) {
 
       return new ToolMessage({
         content: String(result),
-        tool_call_id: toolCall.id,
+        tool_call_id: toolCall.id || '',
       })
     })
   )
@@ -90,9 +90,14 @@ function enterTools(state: HumanLoopStateType): string {
     return END
   }
 
-  const toolName = toolCalls[0].name
+  const firstToolCall = toolCalls[0]
+  if (!firstToolCall) {
+    return END
+  }
+
+  const toolName = firstToolCall.name
   console.log('[进入工具]', toolName)
-  console.log('[参数]', toolCalls[0].args)
+  console.log('[参数]', firstToolCall.args)
 
   if (toolName === 'ask_user') {
     return 'humanNode'
@@ -143,7 +148,10 @@ export async function runHumanLoopAgent(
 
   // 检查是否需要人工输入
   const lastMessage = result.messages[result.messages.length - 1] as AIMessage
-  if (lastMessage.tool_calls && lastMessage.tool_calls[0].name === 'ask_user') {
+  if (
+    lastMessage.tool_calls &&
+    lastMessage.tool_calls[0]?.name === 'ask_user'
+  ) {
     console.log('\n[等待用户输入...]')
     const userInput = await getUserInput()
     console.log(`[用户回答] ${userInput}\n`)
@@ -153,6 +161,8 @@ export async function runHumanLoopAgent(
   }
 
   const finalMessage = result.messages[result.messages.length - 1]
+  if (!finalMessage) {
+    throw new Error('没有获取到最终消息')
+  }
   return finalMessage.content as string
 }
-

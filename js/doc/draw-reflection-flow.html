@@ -37,21 +37,26 @@
 <body>
   <div class="controls">
     <h2>反思模式工作流程图</h2>
-    <button onclick="downloadImage()">💾 下载图片</button>
+    <button onclick="downloadImage()">下载图片</button>
   </div>
-  <canvas id="canvas" width="900" height="900"></canvas>
+  <canvas id="canvas" width="900" height="800"></canvas>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
     const colors = {
-      generate: '#FFF9C4',
-      reflect: '#FFECB3',
-      decision: '#E1BEE7',
-      end: '#C8E6C9',
-      loop: '#FF5722',
-      border: '#333333',
+      nodeBg: '#E3F2FD',
+      nodeBorder: '#1976D2',
+      conditionBg: '#FFE0B2',
+      conditionBorder: '#F57C00',
+      startEnd: '#C8E6C9',
+      startEndBorder: '#388E3C',
+      reflectBg: '#F3E5F5',
+      reflectBorder: '#7B1FA2',
+      arrow: '#333333',
+      loopArrow: '#1976D2',
+      text: '#000000',
     };
 
     function roundRect(ctx, x, y, width, height, radius) {
@@ -68,64 +73,73 @@
       ctx.closePath();
     }
 
-    function drawNode(x, y, w, h, text, subText, bgColor) {
-      ctx.save();
-      roundRect(ctx, x, y, w, h, 8);
-      ctx.fillStyle = bgColor;
-      ctx.fill();
-      ctx.strokeStyle = colors.border;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 20px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      const mainY = subText ? y + h / 2 - 10 : y + h / 2;
-      ctx.fillText(text, x + w / 2, mainY);
-      
-      if (subText) {
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#666666';
-        ctx.fillText(subText, x + w / 2, y + h / 2 + 15);
-      }
-      
-      ctx.restore();
+    function drawDiamond(ctx, x, y, width, height) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - height / 2);
+      ctx.lineTo(x + width / 2, y);
+      ctx.lineTo(x, y + height / 2);
+      ctx.lineTo(x - width / 2, y);
+      ctx.closePath();
     }
 
-    function drawDiamond(x, y, w, h, text, bgColor) {
+    function drawNode(x, y, width, height, text, bgColor, borderColor) {
       ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x + w / 2, y);
-      ctx.lineTo(x + w, y + h / 2);
-      ctx.lineTo(x + w / 2, y + h);
-      ctx.lineTo(x, y + h / 2);
-      ctx.closePath();
-      
+      roundRect(ctx, x - width / 2, y - height / 2, width, height, 8);
       ctx.fillStyle = bgColor;
       ctx.fill();
-      ctx.strokeStyle = colors.border;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 3;
       ctx.stroke();
       
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = colors.text;
       ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, x + w / 2, y + h / 2);
+      
+      const lines = text.split('\n');
+      const lineHeight = 22;
+      const startY = y - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x, startY + i * lineHeight);
+      });
       
       ctx.restore();
     }
 
-    function drawArrow(x1, y1, x2, y2, color = '#333333', lineWidth = 3) {
+    function drawDecision(x, y, width, height, text) {
+      ctx.save();
+      drawDiamond(ctx, x, y, width, height);
+      ctx.fillStyle = colors.conditionBg;
+      ctx.fill();
+      ctx.strokeStyle = colors.conditionBorder;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 18px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const lines = text.split('\n');
+      const lineHeight = 20;
+      const startY = y - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x, startY + i * lineHeight);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawArrow(x1, y1, x2, y2, color = colors.arrow) {
       const headlen = 15;
       const angle = Math.atan2(y2 - y1, x2 - x1);
       
       ctx.save();
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = 3;
       
       ctx.beginPath();
       ctx.moveTo(x1, y1);
@@ -148,104 +162,52 @@
       ctx.restore();
     }
 
-    function drawLabel(x, y, text, color = '#000000', size = 18) {
-      ctx.save();
-      ctx.fillStyle = color;
-      ctx.font = `bold ${size}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText(text, x, y);
-      ctx.restore();
-    }
-
     function draw() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const nodeWidth = 280;
-      const nodeHeight = 90;
       const centerX = 450;
+      const y1 = 80;
+      const y2 = 200;
+      const y3 = 340;
+      const y4 = 500;
+      const y5 = 640;
+
+      // 开始节点
+      drawNode(centerX, y1, 160, 60, '用户问题', colors.startEnd, colors.startEndBorder);
+
+      // 生成初始答案
+      drawNode(centerX, y2, 200, 70, '生成初始答案', colors.nodeBg, colors.nodeBorder);
+
+      // 反思评估
+      drawNode(centerX, y3, 200, 80, '反思评估\n分析改进点', colors.reflectBg, colors.reflectBorder);
+
+      // 判断节点
+      drawDecision(centerX, y4, 180, 100, '是否\n满意？');
+
+      // 结束节点
+      drawNode(centerX, y5, 160, 60, '输出最终答案', colors.startEnd, colors.startEndBorder);
+
+      // 绘制箭头
+      drawArrow(centerX, y1 + 30, centerX, y2 - 35);
+      drawArrow(centerX, y2 + 35, centerX, y3 - 40);
+      drawArrow(centerX, y3 + 40, centerX, y4 - 50);
       
-      const nodes = {
-        generate: { x: centerX - nodeWidth / 2, y: 100 },
-        reflect: { x: centerX - nodeWidth / 2, y: 260 },
-        decision: { x: centerX - 80, y: 430 },
-        end: { x: centerX - nodeWidth / 2, y: 650 }
-      };
-
-      // 绘制节点
-      drawNode(
-        nodes.generate.x, nodes.generate.y, nodeWidth, nodeHeight,
-        'Generate 生成',
-        '生成/改进方案',
-        colors.generate
-      );
-
-      drawNode(
-        nodes.reflect.x, nodes.reflect.y, nodeWidth, nodeHeight,
-        'Reflect 反思',
-        '多维度检查评估',
-        colors.reflect
-      );
-
-      drawDiamond(
-        nodes.decision.x, nodes.decision.y, 160, 120,
-        '是否继续？',
-        colors.decision
-      );
-
-      drawNode(
-        nodes.end.x, nodes.end.y, nodeWidth, nodeHeight,
-        '输出最优方案',
-        'Final Command',
-        colors.end
-      );
-
-      // 主流程箭头
-      drawArrow(
-        centerX, nodes.generate.y + nodeHeight,
-        centerX, nodes.reflect.y
-      );
-
-      drawArrow(
-        centerX, nodes.reflect.y + nodeHeight,
-        centerX, nodes.decision.y
-      );
-
-      // 决策 -> 结束
-      drawArrow(
-        centerX, nodes.decision.y + 120,
-        centerX, nodes.end.y
-      );
-      drawLabel(centerX + 80, nodes.end.y - 40, '否', '#4CAF50', 20);
-
-      // 决策 -> 生成（循环）
+      // 否 - 重新生成（回到生成答案）
       ctx.save();
-      ctx.strokeStyle = colors.loop;
+      ctx.strokeStyle = colors.loopArrow;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(nodes.decision.x, nodes.decision.y + 60);
-      ctx.lineTo(100, nodes.decision.y + 60);
-      ctx.lineTo(100, nodes.generate.y + nodeHeight / 2);
-      ctx.lineTo(nodes.generate.x, nodes.generate.y + nodeHeight / 2);
+      ctx.moveTo(centerX - 90, y4);
+      ctx.lineTo(250, y4);
+      ctx.lineTo(250, y2);
+      ctx.lineTo(centerX - 100, y2);
       ctx.stroke();
       ctx.restore();
-
-      const arrowX = nodes.generate.x;
-      const arrowY = nodes.generate.y + nodeHeight / 2;
-      ctx.save();
-      ctx.fillStyle = colors.loop;
-      ctx.beginPath();
-      ctx.moveTo(arrowX, arrowY);
-      ctx.lineTo(arrowX - 15, arrowY - 8);
-      ctx.lineTo(arrowX - 15, arrowY + 8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-
-      drawLabel(180, nodes.generate.y + nodeHeight / 2 - 30, '是', colors.loop, 18);
-      drawLabel(180, nodes.generate.y + nodeHeight / 2 + 45, '带上反思建议', colors.loop, 16);
-
-
+      drawArrow(260, y2, centerX - 100, y2, colors.loopArrow);
+      
+      // 是 - 结束
+      drawArrow(centerX, y4 + 50, centerX, y5 - 30);
     }
 
     function downloadImage() {

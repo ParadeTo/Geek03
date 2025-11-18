@@ -40,7 +40,7 @@
     <h2>CodeAct 工作流程图</h2>
     <button onclick="downloadImage()">💾 下载图片</button>
   </div>
-  <canvas id="canvas" width="1000" height="700"></canvas>
+  <canvas id="canvas" width="1000" height="600"></canvas>
 
   <script>
     const canvas = document.getElementById('canvas');
@@ -49,14 +49,14 @@
     const colors = {
       nodeBg: '#E3F2FD',
       nodeBorder: '#1976D2',
-      nodeText: '#0D47A1',
-      arrow: '#1976D2',
-      conditionBg: '#FFF9C4',
+      conditionBg: '#FFE0B2',
       conditionBorder: '#F57C00',
       startEnd: '#C8E6C9',
       startEndBorder: '#388E3C',
       codeBg: '#F3E5F5',
       codeBorder: '#7B1FA2',
+      arrow: '#333333',
+      text: '#000000',
     };
 
     function roundRect(ctx, x, y, width, height, radius) {
@@ -82,17 +82,17 @@
       ctx.closePath();
     }
 
-    function drawNode(x, y, width, height, text, bgColor, borderColor, textColor) {
+    function drawNode(x, y, width, height, text, bgColor, borderColor) {
       ctx.save();
-      roundRect(ctx, x - width / 2, y - height / 2, width, height, 10);
+      roundRect(ctx, x - width / 2, y - height / 2, width, height, 8);
       ctx.fillStyle = bgColor;
       ctx.fill();
       ctx.strokeStyle = borderColor;
       ctx.lineWidth = 3;
       ctx.stroke();
       
-      ctx.fillStyle = textColor;
-      ctx.font = 'bold 20px Arial';
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
@@ -116,8 +116,8 @@
       ctx.lineWidth = 3;
       ctx.stroke();
       
-      ctx.fillStyle = '#E65100';
-      ctx.font = 'bold 16px Arial';
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
@@ -210,47 +210,36 @@
       ctx.restore();
     }
 
-    function drawTitle(text, y) {
-      ctx.save();
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 28px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(text, canvas.width / 2, y);
-      ctx.restore();
-    }
-
     function draw() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      drawTitle('CodeAct 工作流程', 40);
-
       const startX = 500;
-      const startY = 120;
-      const llmY = 260;
-      const decisionY = 400;
-      const executeY = 540;
-      const endY = 400;
+      const startY = 80;
+      const llmY = 200;
+      const decisionY = 340;
+      const executeY = 480;
+      const endY = 340;
       const endX = 750;
 
       // 开始节点
       drawNode(startX, startY, 160, 60, '用户问题', 
-               colors.startEnd, colors.startEndBorder, '#1B5E20');
+               colors.startEnd, colors.startEndBorder);
 
       // LLM 调用节点（分析+生成代码）
       drawNode(startX, llmY, 200, 90, 'LLM 调用\n(分析+生成代码)', 
-               colors.nodeBg, colors.nodeBorder, colors.nodeText);
+               colors.nodeBg, colors.nodeBorder);
 
       // 决策节点
       drawDecision(startX, decisionY, 200, 120, '是否\n生成代码？');
 
       // 代码执行节点
       drawNode(startX, executeY, 180, 80, '执行代码\n(沙箱)', 
-               colors.codeBg, colors.codeBorder, '#4A148C');
+               colors.codeBg, colors.codeBorder);
 
       // 结束节点
       drawNode(endX, endY, 160, 60, '输出答案', 
-               colors.startEnd, colors.startEndBorder, '#1B5E20');
+               colors.startEnd, colors.startEndBorder);
 
       // 绘制箭头
       // 开始 → LLM调用

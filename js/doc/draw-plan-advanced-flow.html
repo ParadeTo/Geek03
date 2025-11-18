@@ -37,26 +37,28 @@
 <body>
   <div class="controls">
     <h2>高级计划模式工作流程图</h2>
-    <button onclick="downloadImage()">💾 下载图片</button>
+    <button onclick="downloadImage()">下载图片</button>
   </div>
-  <canvas id="canvas" width="800" height="900"></canvas>
+  <canvas id="canvas" width="800" height="800"></canvas>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 颜色定义（与 ReAct 保持一致的风格）
     const colors = {
-      start: '#E3F2FD',
-      execute: '#FFF9C4',
-      planstep: '#FFECB3',
-      decision: '#E1BEE7',
-      end: '#C8E6C9',
-      loop: '#FF5722',
-      border: '#333333',
+      nodeBg: '#E3F2FD',
+      nodeBorder: '#1976D2',
+      conditionBg: '#FFE0B2',
+      conditionBorder: '#F57C00',
+      startEnd: '#C8E6C9',
+      startEndBorder: '#388E3C',
+      planBg: '#F3E5F5',
+      planBorder: '#7B1FA2',
+      arrow: '#333333',
+      loopArrow: '#1976D2',
+      text: '#000000',
     };
 
-    // 绘制圆角矩形
     function roundRect(ctx, x, y, width, height, radius) {
       ctx.beginPath();
       ctx.moveTo(x + radius, y);
@@ -71,67 +73,73 @@
       ctx.closePath();
     }
 
-    // 绘制节点
-    function drawNode(x, y, w, h, text, subText, bgColor) {
-      ctx.save();
-      roundRect(ctx, x, y, w, h, 8);
-      ctx.fillStyle = bgColor;
-      ctx.fill();
-      ctx.strokeStyle = colors.border;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 20px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      const mainY = subText ? y + h / 2 - 10 : y + h / 2;
-      ctx.fillText(text, x + w / 2, mainY);
-      
-      if (subText) {
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#666666';
-        ctx.fillText(subText, x + w / 2, y + h / 2 + 15);
-      }
-      
-      ctx.restore();
+    function drawDiamond(ctx, x, y, width, height) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - height / 2);
+      ctx.lineTo(x + width / 2, y);
+      ctx.lineTo(x, y + height / 2);
+      ctx.lineTo(x - width / 2, y);
+      ctx.closePath();
     }
 
-    // 绘制菱形
-    function drawDiamond(x, y, w, h, text, bgColor) {
+    function drawNode(x, y, width, height, text, bgColor, borderColor) {
       ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x + w / 2, y);
-      ctx.lineTo(x + w, y + h / 2);
-      ctx.lineTo(x + w / 2, y + h);
-      ctx.lineTo(x, y + h / 2);
-      ctx.closePath();
-      
+      roundRect(ctx, x - width / 2, y - height / 2, width, height, 8);
       ctx.fillStyle = bgColor;
       ctx.fill();
-      ctx.strokeStyle = colors.border;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 3;
       ctx.stroke();
       
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = colors.text;
       ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, x + w / 2, y + h / 2);
+      
+      const lines = text.split('\n');
+      const lineHeight = 22;
+      const startY = y - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x, startY + i * lineHeight);
+      });
       
       ctx.restore();
     }
 
-    // 绘制箭头
-    function drawArrow(x1, y1, x2, y2, color = '#333333', lineWidth = 3) {
+    function drawDecision(x, y, width, height, text) {
+      ctx.save();
+      drawDiamond(ctx, x, y, width, height);
+      ctx.fillStyle = colors.conditionBg;
+      ctx.fill();
+      ctx.strokeStyle = colors.conditionBorder;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 18px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const lines = text.split('\n');
+      const lineHeight = 20;
+      const startY = y - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x, startY + i * lineHeight);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawArrow(x1, y1, x2, y2, color = colors.arrow) {
       const headlen = 15;
       const angle = Math.atan2(y2 - y1, x2 - x1);
       
       ctx.save();
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = 3;
       
       ctx.beginPath();
       ctx.moveTo(x1, y1);
@@ -154,127 +162,59 @@
       ctx.restore();
     }
 
-    // 绘制文本标签
-    function drawLabel(x, y, text, color = '#000000', size = 18) {
-      ctx.save();
-      ctx.fillStyle = color;
-      ctx.font = `bold ${size}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText(text, x, y);
-      ctx.restore();
-    }
-
-    // 绘制流程图
     function draw() {
-      // 填充白色背景
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 节点配置
-      const nodeWidth = 240;
-      const nodeHeight = 90;
       const centerX = 400;
+      const y1 = 80;
+      const y2 = 200;
+      const y3 = 320;
+      const y4 = 440;
+      const y5 = 580;
+      const y6 = 700;
+
+      // 开始节点
+      drawNode(centerX, y1, 160, 60, '用户问题', colors.startEnd, colors.startEndBorder);
+
+      // 制定整体计划
+      drawNode(centerX, y2, 200, 70, '制定整体计划', colors.planBg, colors.planBorder);
+
+      // 执行单步计划
+      drawNode(centerX, y3, 200, 70, '执行单步计划', colors.nodeBg, colors.nodeBorder);
+
+      // 反思与重新计划
+      drawNode(centerX, y4, 200, 80, '反思与重新计划', colors.planBg, colors.planBorder);
+
+      // 判断节点
+      drawDecision(centerX, y5, 180, 100, '计划\n完成？');
+
+      // 结束节点
+      drawNode(centerX, y6, 160, 60, '输出结果', colors.startEnd, colors.startEndBorder);
+
+      // 绘制箭头
+      drawArrow(centerX, y1 + 30, centerX, y2 - 35);
+      drawArrow(centerX, y2 + 35, centerX, y3 - 35);
+      drawArrow(centerX, y3 + 35, centerX, y4 - 40);
+      drawArrow(centerX, y4 + 40, centerX, y5 - 50);
       
-      const nodes = {
-        start: { x: centerX - nodeWidth / 2, y: 80 },
-        execute: { x: centerX - nodeWidth / 2, y: 220 },
-        planstep: { x: centerX - nodeWidth / 2, y: 380 },
-        decision: { x: centerX - 60, y: 540 },
-        end: { x: centerX - nodeWidth / 2, y: 730 }
-      };
-
-      // 绘制节点
-      drawNode(
-        nodes.start.x, nodes.start.y, nodeWidth, nodeHeight,
-        '初始计划',
-        '[步骤1, 步骤2, 步骤3]',
-        colors.start
-      );
-
-      drawNode(
-        nodes.execute.x, nodes.execute.y, nodeWidth, nodeHeight,
-        'Execute 执行',
-        '使用 ReAct Agent',
-        colors.execute
-      );
-
-      drawNode(
-        nodes.planstep.x, nodes.planstep.y, nodeWidth, nodeHeight,
-        'Plan Step 规划评估',
-        '分析结果，动态调整',
-        colors.planstep
-      );
-
-      drawDiamond(
-        nodes.decision.x, nodes.decision.y, 120, 100,
-        '完成？',
-        colors.decision
-      );
-
-      drawNode(
-        nodes.end.x, nodes.end.y, nodeWidth, nodeHeight,
-        '返回最终答案',
-        'Response',
-        colors.end
-      );
-
-      // 绘制主流程箭头
-      // 开始 -> 执行
-      drawArrow(
-        centerX, nodes.start.y + nodeHeight,
-        centerX, nodes.execute.y
-      );
-
-      // 执行 -> 规划
-      drawArrow(
-        centerX, nodes.execute.y + nodeHeight,
-        centerX, nodes.planstep.y
-      );
-    //   drawLabel(centerX + 100, nodes.execute.y + nodeHeight + 80, '记录历史', '#666666', 16);
-
-      // 规划 -> 决策
-      drawArrow(
-        centerX, nodes.planstep.y + nodeHeight,
-        centerX, nodes.decision.y
-      );
-
-      // 决策 -> 结束（是）
-      drawArrow(
-        centerX, nodes.decision.y + 100,
-        centerX, nodes.end.y
-      );
-      drawLabel(centerX + 50, nodes.end.y - 40, '是', '#4CAF50', 20);
-
-      // 决策 -> 执行（否，循环）
+      // 否 - 继续执行（回到执行步骤）
       ctx.save();
-      ctx.strokeStyle = colors.loop;
+      ctx.strokeStyle = colors.loopArrow;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(nodes.decision.x, nodes.decision.y + 50);
-      ctx.lineTo(100, nodes.decision.y + 50);
-      ctx.lineTo(100, nodes.execute.y + nodeHeight / 2);
-      ctx.lineTo(nodes.execute.x, nodes.execute.y + nodeHeight / 2);
+      ctx.moveTo(centerX - 90, y5);
+      ctx.lineTo(200, y5);
+      ctx.lineTo(200, y3);
+      ctx.lineTo(centerX - 100, y3);
       ctx.stroke();
       ctx.restore();
-
-      // 循环箭头头部（向右指向 Execute）
-      const arrowX = nodes.execute.x;
-      const arrowY = nodes.execute.y + nodeHeight / 2;
-      ctx.save();
-      ctx.fillStyle = colors.loop;
-      ctx.beginPath();
-      ctx.moveTo(arrowX, arrowY);
-      ctx.lineTo(arrowX - 15, arrowY - 8);
-      ctx.lineTo(arrowX - 15, arrowY + 8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-
-      drawLabel(150, nodes.execute.y + nodeHeight / 2 - 30, '否（继续）', colors.loop, 18);
-      drawLabel(162, nodes.execute.y + nodeHeight / 2 + 45, '执行调整后计划', colors.loop, 16);
+      drawArrow(210, y3, centerX - 100, y3, colors.loopArrow);
+      
+      // 是 - 结束
+      drawArrow(centerX, y5 + 50, centerX, y6 - 30);
     }
 
-    // 下载图片
     function downloadImage() {
       const link = document.createElement('a');
       link.download = 'plan-advanced-workflow.png';
@@ -282,7 +222,6 @@
       link.click();
     }
 
-    // 页面加载时绘制
     draw();
   </script>
 </body>

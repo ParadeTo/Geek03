@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReAct 流程图生成器</title>
+  <title>人机协作模式流程图生成器</title>
   <style>
     body {
       margin: 20px;
@@ -36,10 +36,10 @@
 </head>
 <body>
   <div class="controls">
-    <h2>ReAct 工作流程图</h2>
+    <h2>人机协作模式工作流程图</h2>
     <button onclick="downloadImage()">💾 下载图片</button>
   </div>
-  <canvas id="canvas" width="1400" height="500"></canvas>
+  <canvas id="canvas" width="1400" height="600"></canvas>
 
   <script>
     const canvas = document.getElementById('canvas');
@@ -48,14 +48,13 @@
     const colors = {
       nodeBg: '#E3F2FD',
       nodeBorder: '#1976D2',
-      action: '#FFE0B2',
-      actionBorder: '#F57C00',
-      tool: '#F3E5F5',
+      humanBg: '#FFE0B2',
+      humanBorder: '#F57C00',
+      toolBg: '#F3E5F5',
       toolBorder: '#7B1FA2',
       final: '#C8E6C9',
       finalBorder: '#388E3C',
       arrow: '#333333',
-      llmBorder: '#1976D2',
       envBorder: '#7B1FA2',
     };
 
@@ -72,6 +71,38 @@
       ctx.lineTo(x, y + radius);
       ctx.quadraticCurveTo(x, y, x + radius, y);
       ctx.closePath();
+    }
+
+    // 绘制菱形
+    function drawDiamond(x, y, w, h, text, bgColor) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, y + h / 2);
+      ctx.lineTo(x + w / 2, y);
+      ctx.lineTo(x + w, y + h / 2);
+      ctx.lineTo(x + w / 2, y + h);
+      ctx.closePath();
+      
+      ctx.fillStyle = bgColor;
+      ctx.fill();
+      ctx.strokeStyle = '#333333';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const lines = text.split('\n');
+      const lineHeight = 20;
+      const startY = y + h / 2 - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, i) => {
+        ctx.fillText(line, x + w / 2, startY + i * lineHeight);
+      });
+      
+      ctx.restore();
     }
 
     // 绘制外框
@@ -201,43 +232,46 @@
       const nodeWidth = 150;
       const nodeHeight = 80;
 
-      // 顶部：Final Answer
-      drawNode(100, 80, 220, nodeHeight, 'Final Answer', colors.final);
+      // 顶部一行：用户输入、Interrupt
+      drawNode(520, 80, 200, nodeHeight, '用户输入\nResume', colors.humanBg);
+      drawNode(880, 80, 200, nodeHeight, '暂停等待\nInterrupt', colors.humanBg);
 
-      // 中间主流程：Input → Thought → Action → Action Input → PAUSE
-      drawNode(100, 280, nodeWidth, nodeHeight, 'Input', colors.nodeBg);
-      drawNode(350, 280, nodeWidth, nodeHeight, 'Thought', colors.nodeBg);
-      drawNode(600, 280, nodeWidth, nodeHeight, 'Action', colors.action);
-      drawNode(850, 280, nodeWidth, nodeHeight, 'Action\nInput', colors.action);
-      drawNode(1100, 280, nodeWidth, nodeHeight, 'PAUSE', colors.action);
+      // 中间：Input、LLM推理、路由判断、Final Answer
+      drawNode(100, 300, nodeWidth, nodeHeight, 'Input', colors.nodeBg);
+      drawNode(400, 300, nodeWidth, nodeHeight, 'LLM\n推理', colors.nodeBg);
+      drawDiamond(720, 290, 160, 100, '路由\n判断', colors.humanBg);
+      drawNode(1050, 300, 180, nodeHeight, 'Final\nAnswer', colors.final);
 
-      // 右侧：工具执行、Observation
-      drawNode(1100, 80, 180, nodeHeight, '工具执行', colors.tool);
-      drawNode(850, 80, 200, nodeHeight, 'Observation', colors.nodeBg);
+      // 底部：工具执行
+      drawNode(720, 480, 180, nodeHeight, '工具执行', colors.toolBg);
 
-      // 主流程箭头（从左到右）
-      drawArrow(250, 320, 350, 320);
-      drawArrow(500, 320, 600, 320);
-      drawArrow(750, 320, 850, 320);
-      drawArrow(1000, 320, 1100, 320);
+      // 中间流程：Input -> LLM推理 -> 路由判断
+      drawArrow(250, 340, 400, 340);
+      drawArrow(550, 340, 720, 340);
 
-      // PAUSE → 工具执行（向上）
-      drawArrow(1175, 280, 1175, 160, colors.envBorder);
+      // 路由判断 → Interrupt（向上）
+      drawArrow(800, 290, 960, 160, colors.humanBorder);
 
-      // 工具执行 → Observation（向左）
-      drawArrow(1100, 120, 1050, 120, colors.envBorder);
+      // Interrupt → 用户输入（向左）
+      drawArrow(880, 120, 720, 120, colors.humanBorder);
 
-      // Observation → Thought（向下）
-      drawArrow(950, 160, 425, 280, colors.llmBorder);
+      // 用户输入 → LLM推理（向下）
+      drawArrow(620, 160, 475, 300, colors.humanBorder);
 
-      // Thought → Final Answer（向左上，虚线）
-      drawDashedArrow(350, 280, 210, 160, '#4CAF50');
+      // 路由判断 → 工具执行（向下）
+      drawArrow(800, 390, 800, 480, colors.envBorder);
+
+      // 工具执行 → LLM推理（向上向左）
+      drawArrow(720, 520, 525, 380, colors.envBorder);
+
+      // 路由判断 → Final Answer（向右）
+      drawDashedArrow(880, 340, 1050, 340, '#4CAF50');
     }
 
     // 下载图片
     function downloadImage() {
       const link = document.createElement('a');
-      link.download = 'react-workflow.png';
+      link.download = 'human-loop-workflow.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
@@ -247,4 +281,3 @@
   </script>
 </body>
 </html>
-
