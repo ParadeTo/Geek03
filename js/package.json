@@ -18,6 +18,7 @@
     "plan:advanced": "ts-node src/planmode-advanced/index.ts",
     "reflection:dev": "ts-node src/reflection/index.ts",
     "human:dev": "ts-node --transpile-only src/human-in-loop/index.ts",
+    "deep:research": "ts-node src/deep-research/index.ts",
     "clean": "rm -rf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -34,9 +35,11 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@langchain/community": "^1.0.4",
     "@langchain/core": "^1.0.1",
     "@langchain/langgraph": "^1.0.0",
     "@langchain/openai": "^1.0.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "openai": "^5.23.1",
     "zod": "^3.25.76",
