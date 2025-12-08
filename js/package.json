@@ -19,6 +19,8 @@
     "reflection:dev": "ts-node src/reflection/index.ts",
     "human:dev": "ts-node --transpile-only src/human-in-loop/index.ts",
     "deep:research": "ts-node src/deep-research/index.ts",
+    "memory:dev": "ts-node src/memory/index.ts",
+    "mem0:dev": "ts-node src/mem0/index.ts",
     "clean": "rm -rf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -43,6 +45,7 @@
     "dotenv": "^17.2.3",
     "openai": "^5.23.1",
     "zod": "^3.25.76",
-    "zod-to-json-schema": "^3.24.6"
+    "zod-to-json-schema": "^3.24.6",
+    "@qdrant/js-client-rest": "^1.13.0"
   }
 }

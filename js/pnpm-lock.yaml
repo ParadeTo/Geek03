@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@langchain/community':
         specifier: ^1.0.4
-        version: 1.0.4(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.56.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.3)(@langchain/core@1.0.1(openai@5.23.1(ws@8.18.3)(zod@3.25.76)))(cheerio@1.1.0)(duck-duck-scrape@2.2.7)(ibm-cloud-sdk-core@5.4.4)(jsonwebtoken@9.0.2)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(playwright@1.56.1)(ws@8.18.3)
+        version: 1.0.4(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.56.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.3)(@langchain/core@1.0.1(openai@5.23.1(ws@8.18.3)(zod@3.25.76)))(@qdrant/js-client-rest@1.16.2(typescript@5.9.2))(cheerio@1.1.0)(duck-duck-scrape@2.2.7)(ibm-cloud-sdk-core@5.4.4)(jsonwebtoken@9.0.2)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(playwright@1.56.1)(ws@8.18.3)
       '@langchain/core':
         specifier: ^1.0.1
         version: 1.0.1(openai@5.23.1(ws@8.18.3)(zod@3.25.76))
@@ -20,6 +20,9 @@ importers:
       '@langchain/openai':
         specifier: ^1.0.0
         version: 1.0.0(@langchain/core@1.0.1(openai@5.23.1(ws@8.18.3)(zod@3.25.76)))(ws@8.18.3)
+      '@qdrant/js-client-rest':
+        specifier: ^1.13.0
+        version: 1.16.2(typescript@5.9.2)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -522,6 +525,16 @@ packages:
     resolution: {integrity: sha512-vSMYtL/zOcFpvJCW71Q/OEGQb7KYBPAdKh35WNSkaZA75JlAO8ED8UN6GUNTm3drWomcbcqRPFqQbLae8yBTdg==}
     engines: {node: '>=18'}
     hasBin: true
+
+  '@qdrant/js-client-rest@1.16.2':
+    resolution: {integrity: sha512-Zm4wEZURrZ24a+Hmm4l1QQYjiz975Ep3vF0yzWR7ICGcxittNz47YK2iBOk8kb8qseCu8pg7WmO1HOIsO8alvw==}
+    engines: {node: '>=18.17.0', pnpm: '>=8'}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@qdrant/openapi-typescript-fetch@1.2.6':
+    resolution: {integrity: sha512-oQG/FejNpItrxRHoyctYvT3rwGZOnK4jr3JdppO/c78ktDvkWiPXPHNsrDf33K9sZdRb6PR7gi4noIapu5q4HA==}
+    engines: {node: '>=18.0.0', pnpm: '>=8'}
 
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
@@ -1261,6 +1274,10 @@ packages:
   undici-types@7.13.0:
     resolution: {integrity: sha512-Ov2Rr9Sx+fRgagJ5AX0qvItZG/JKKoBRAVITs1zk7IqZGTJUwgUr7qoYBpWwakpWilTZFM98rG/AFRocu10iIQ==}
 
+  undici@6.22.0:
+    resolution: {integrity: sha512-hU/10obOIu62MGYjdskASR3CUAiYaFTtC9Pa6vHyf//mAipSvSQg6od2CnJswq7fvzNS3zJhxoRkgNVaHurWKw==}
+    engines: {node: '>=18.17'}
+
   undici@7.16.0:
     resolution: {integrity: sha512-QEg3HPMll0o3t2ourKwOeUAZ159Kn9mx5pnzHRQO8+Wixmh88YdZRiIwat0iNzNNXn0yoEtXJqFpyW7eM8BV7g==}
     engines: {node: '>=20.18.1'}
@@ -1425,7 +1442,7 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/community@1.0.4(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.56.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.3)(@langchain/core@1.0.1(openai@5.23.1(ws@8.18.3)(zod@3.25.76)))(cheerio@1.1.0)(duck-duck-scrape@2.2.7)(ibm-cloud-sdk-core@5.4.4)(jsonwebtoken@9.0.2)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(playwright@1.56.1)(ws@8.18.3)':
+  '@langchain/community@1.0.4(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.56.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.3)(@langchain/core@1.0.1(openai@5.23.1(ws@8.18.3)(zod@3.25.76)))(@qdrant/js-client-rest@1.16.2(typescript@5.9.2))(cheerio@1.1.0)(duck-duck-scrape@2.2.7)(ibm-cloud-sdk-core@5.4.4)(jsonwebtoken@9.0.2)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(playwright@1.56.1)(ws@8.18.3)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.56.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@5.23.1(ws@8.18.3)(zod@3.25.76))(zod@3.25.76)
       '@ibm-cloud/watsonx-ai': 1.7.3
@@ -1442,6 +1459,7 @@ snapshots:
       zod: 3.25.76
     optionalDependencies:
       '@browserbasehq/sdk': 2.6.0
+      '@qdrant/js-client-rest': 1.16.2(typescript@5.9.2)
       cheerio: 1.1.0
       duck-duck-scrape: 2.2.7
       jsonwebtoken: 9.0.2
@@ -1524,6 +1542,14 @@ snapshots:
   '@playwright/test@1.56.1':
     dependencies:
       playwright: 1.56.1
+
+  '@qdrant/js-client-rest@1.16.2(typescript@5.9.2)':
+    dependencies:
+      '@qdrant/openapi-typescript-fetch': 1.2.6
+      typescript: 5.9.2
+      undici: 6.22.0
+
+  '@qdrant/openapi-typescript-fetch@1.2.6': {}
 
   '@tokenizer/token@0.3.0': {}
 
@@ -2247,6 +2273,8 @@ snapshots:
   undici-types@5.26.5: {}
 
   undici-types@7.13.0: {}
+
+  undici@6.22.0: {}
 
   undici@7.16.0:
     optional: true
