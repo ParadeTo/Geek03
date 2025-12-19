@@ -21,6 +21,8 @@
     "deep:research": "ts-node src/deep-research/index.ts",
     "memory:dev": "ts-node src/memory/index.ts",
     "mem0:dev": "ts-node src/mem0/index.ts",
+    "mem0:store": "ts-node src/mem0/test/store-mem.ts",
+    "mem0:search": "ts-node src/mem0/test/search-mem.ts",
     "clean": "rm -rf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

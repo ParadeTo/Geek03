@@ -2,28 +2,28 @@
 
 ## 前言
 
-在构建 AI Agent 时，"记忆"是一个绑不开的话题。一个没有记忆的 Agent 就像金鱼一样，每次对话都从零开始。用户说"我叫小明"，下一轮就忘了。这显然不是我们想要的智能体验。
+在构建 AI Agent 时，"记忆"是一个绕不开的话题。一个没有记忆的 Agent 就像金鱼一样，每次对话都从零开始。用户说"我叫小明"，下一轮就忘了。这显然不是我们想要的智能体验。
 
 本文介绍两种记忆实现方案：
 
-1. **Memory（会话记忆）**：基于 LangGraph 的 MemorySaver，实现单次会话内的状态持久化
-2. **Mem0（长期记忆）**：基于 mem0 云服务，实现跨会话的用户记忆存储与检索
-
-两者解决的问题不同，适用场景也不同。
+1. **Memory（会话记忆）**：基于 LangGraph 的 `MemorySaver`，实现单次会话内的状态持久化。
+2. **Mem0（长期记忆）**：基于向量数据库（如 Qdrant），实现跨会话的用户偏好存储与检索。
 
 ## 一、Memory：会话级记忆
 
 ### 1.1 解决什么问题
 
-假设你在做一个餐卡充值助手。用户第一次说"充值10元"，余额变成110元。第二次再说"充值10元"，如果没有记忆，Agent 会认为余额还是初始的100元，充值后变成110元——而不是正确的120元。
+会话记忆（Short-term Memory）主要用于维护当前对话的连贯性。
 
-MemorySaver 通过 `thread_id` 维护对话状态，让同一会话内的多轮交互能够累积上下文。
+**案例**：餐卡充值助手。
+用户第一次说"充值10元"，余额变成110元。第二次再说"再充10元"，Agent 必须知道刚才已经充过了，当前的基数是110元。
 
 ### 1.2 核心实现
 
-```typescript
-import {StateGraph, Annotation, MemorySaver} from '@langchain/langgraph'
+我们利用 LangGraph 的 `Annotation.Root` 来定义状态，并使用 `reducer` 累加消息：
 
+```typescript
+// src/memory/graph.ts
 const GraphState = Annotation.Root({
   messages: Annotation<any[]>({
     reducer: (x, y) => x.concat(y),
@@ -31,152 +31,200 @@ const GraphState = Annotation.Root({
   }),
 })
 
-// 构建图时传入 MemorySaver 作为 checkpointer
-export function buildGraph() {
-  const workflow = new StateGraph(GraphState)
-    .addNode('llm_call', llmCall)
-    .addNode('environment', toolNode)
-    .addEdge('__start__', 'llm_call')
-    .addConditionalEdges('llm_call', shouldContinue)
-    .addEdge('environment', 'llm_call')
-
-  const memory = new MemorySaver()
-  return workflow.compile({checkpointer: memory})
+// LLM 节点：注入 System Prompt 并调用模型
+async function llmCall(state: typeof GraphState.State) {
+  const messages = [new SystemMessage(SYSTEM_PROMPT), ...state.messages]
+  const response = await llm.invoke(messages)
+  return {messages: [response]}
 }
+
+// 编译图时挂载 MemorySaver
+const memory = new MemorySaver()
+const agent = workflow.compile({checkpointer: memory})
 ```
 
-使用时通过 `thread_id` 区分不同对话：
+### 1.3 运行效果
+
+通过 `thread_id` 来标记同一个会话。
 
 ```typescript
-const agent = buildGraph()
-const config = {configurable: {thread_id: '1'}}
+const config = {configurable: {thread_id: '123'}}
 
-// 第一轮：余额 100 + 10 = 110
-await agent.invoke({messages: [new HumanMessage('充值10元')]}, config)
+// 第一轮
+await agent.invoke({messages: [new HumanMessage('帮我充值10元')]}, config)
+// 输出：工具参数: { original_amount: 100 } -> 余额 110
 
-// 第二轮：余额 110 + 10 = 120（保持了上一轮的状态）
-await agent.invoke({messages: [new HumanMessage('充值10元')]}, config)
+// 第二轮
+await agent.invoke({messages: [new HumanMessage('再充10元')]}, config)
+// 输出：工具参数: { original_amount: 110 } -> 余额 120
 ```
 
-### 1.3 工作流程
+**实际运行日志**：
+```bash
+> pnpm memory:dev
 
-```
-用户输入 → LLM 判断 → 需要工具？
-                         ↓ 是
-                      执行工具 → 返回 LLM
-                         ↓ 否
-                      输出结果
-                         ↓
-              （状态通过 MemorySaver 持久化）
+工具名称: add_tool
+工具参数: { original_amount: 110 }
+您的餐卡已经充值10元，充值后的余额是120元。
+工具名称: add_tool
+工具参数: { original_amount: 120 }
+您的餐卡已经充值10元，充值后的余额是130元。
 ```
 
-关键点：MemorySaver 把每一轮的 messages 状态存下来，下一轮调用时自动恢复。
+---
 
 ## 二、Mem0：长期记忆
 
 ### 2.1 解决什么问题
 
-MemorySaver 解决的是"会话内"的问题。但如果用户今天说"我喜欢喝可乐"，明天再来问"我喜欢喝什么"，Agent 还是不知道。
+长期记忆（Long-term Memory）跨越了会话的限制。即使过了半个月，Agent 依然记得小张喜欢喝什么，或者用户的家庭成员关系。
 
-长期记忆的核心是向量数据库 + Embedding，它能够：
-- 将对话信息向量化后存储
-- 下次对话时通过语义搜索召回相关记忆
+这本质上是一个 **RAG (Retrieval-Augmented Generation)** 流程：存储（Store）时将对话提取为向量，查询（Search）时召回相关的历史片段。
 
-### 2.2 核心实现
+### 2.2 核心概念：Qdrant
+
+Qdrant 是一款高性能的开源向量数据库，专为向量搜索（Vector Search）而设计。它能够处理海量的高维向量数据，并支持实时更新和混合查询。
+
+在本地部署 Qdrant 时，你会接触到以下核心概念：
+
+- **Collection（集合）**：类似于关系型数据库中的“表”。每个 Collection 包含一组 Points，并统一定义了向量的维度（如 1536 维）和度量方式（如 Cosine 相似度）。
+- **Point（点）**：Qdrant 中存储的最小数据单位，类似于“行”。
+  - **ID**：Point 的唯一标识，可以是数字或 UUID。
+  - **Vector**：数据的向量表示（由 Embedding 模型生成），它是搜索的灵魂。
+  - **Payload**：挂载在该点上的“元数据”（JSON 对象）。
+    - **作用**：Payload 让向量数据库具备了“结构化搜索”的能力。
+    - **案例**：我们把对话文本存入 `memory` 字段，把用户 ID 存入 `user_id` 字段。查询时，我们可以通过 Payload 过滤出“只属于 xyy 这个用户”的记忆。
+
+**为什么选择 Qdrant？**
+1. **高性能**：底层使用 Rust 编写，检索速度极快。
+2. **混合搜索**：既能搜“向量相似度”，又能根据 Payload 做“硬过滤”（如 `user_id == 'xyy'`）。
+3. **部署简单**：一个 Docker/Podman 镜像即可跑起来。
 
 ```typescript
-import {QdrantClient} from '@qdrant/js-client-rest'
-import {OpenAIEmbeddings} from '@langchain/openai'
-
-// 连接本地 Qdrant
-const qdrant = new QdrantClient({host: '116.153.88.164', port: 6333})
-
-// 使用通义的 Embedding 模型
-const embeddings = new OpenAIEmbeddings({
-  modelName: 'text-embedding-v2',
-  apiKey: process.env.TONGYI_API_KEY,
-  configuration: {
-    baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-  },
+// src/mem0/memconfig.ts 写入逻辑
+await qdrant.upsert(COLLECTION_NAME, {
+  points: [
+    {
+      id: Date.now(), // 唯一 ID
+      vector: vector, // 向量数据
+      payload: { memory: text, user_id: userId }, // 挂载元数据，方便后续过滤
+    },
+  ],
 })
+```
 
-// 封装 search 方法
-export const m = {
-  async search(query: string, options: {user_id: string}) {
-    const queryVector = await embeddings.embedQuery(query)
+### 2.3 本地部署 Qdrant (Podman)
 
-    const results = await qdrant.search('test', {
-      vector: queryVector,
-      limit: 5,
-      filter: {
-        must: [{key: 'user_id', match: {value: options.user_id}}],
-      },
+为了实现长期记忆，我们需要一个运行中的 Qdrant 服务。使用 Podman（或 Docker）部署是最快的方式。
+
+
+```bash
+podman run -d --name qdrant \
+  -p 6333:6333 \
+  -v ~/qdrant_data:/qdrant/storage \
+  qdrant/qdrant
+```
+
+部署成功后，Qdrant 自带了一个非常漂亮的**图形化管理后台**。你可以直接访问：
+`http://localhost:6333/dashboard`
+
+在这里你可以直观地看到所有的 Collection、Points 以及它们的 Payload 内容。
+
+### 2.4 存储案例 (Store)
+
+我们可以手动存储一些背景信息：
+
+```typescript
+// src/mem0/test/store-mem.ts
+const messages = [
+  {role: 'user', content: '小张和小明是什么关系？'},
+  {role: 'assistant', content: '小张是小明的爸爸'},
+  {role: 'user', content: '小张喜欢喝什么饮料？'},
+  {role: 'assistant', content: '小张喜欢喝大窑。'},
+]
+await m.add(messages, 'xyy')
+```
+
+### 2.5 搜索案例 (Search)
+
+当用户提问时，Agent 会先去库里"翻翻旧账"：
+
+```typescript
+// src/mem0/test/search-mem.ts
+const results = await m.search('小明的爸爸喜欢喝什么饮料？', {user_id: 'xyy'})
+console.log(results)
+```
+
+**实际运行日志**：
+```bash
+> pnpm mem0:search
+
+[
+  {
+    memory: 'user: 小张和小明是什么关系？\n' +
+      'assistant: 小张是小明的爸爸\n' +
+      'user: 小张喜欢喝什么饮料？\n' +
+      'assistant: 小张喜欢喝大窑。',
+    score: 0.84008104
+  }
+]
+```
+
+### 2.6 流程闭环：从检索到生成
+
+有了存储（Store）和搜索（Search）能力后，最后一步就是将它们集成到 Agent 的执行流中。这是一个经典的 **RAG（检索增强生成）** 模式。
+
+在 `src/mem0/graph.ts` 中，我们的核心逻辑如下：
+
+1.  **精准召回**：每当用户说一句话，我们先拿这句话去 Qdrant 库里搜索最相关的 5 条记忆。
+2.  **动态注入**：将搜到的“陈年旧事”格式化为一段文本，作为上下文注入到 `SystemMessage` 中。
+3.  **个性化生成**：LLM 看到这些上下文后，就会表现得“很懂你”。
+
+```typescript
+async function chat(state: typeof ChatState.State) {
+  const messages = state.messages
+  const userId = state.mem0UserId
+
+  // 1. 获取用户最后一条提问，并召回相关记忆
+  const lastMessage = messages[messages.length - 1]
+  const memories = await m.search(lastMessage.content, { user_id: userId })
+
+  // 2. 将记忆片段拼接成上下文字符串
+  let context = '来自以往对话的相关信息：\n'
+  if (memories && memories.length > 0) {
+    memories.forEach(mem => {
+      context += `- ${mem.memory}\n`
     })
+  } else {
+    context += '(暂无相关记忆)\n'
+  }
 
-    return results.map((r) => ({
-      memory: r.payload?.memory as string,
-      score: r.score,
-    }))
-  },
+  // 3. 构造包含“记忆”的系统提示词
+  const systemPrompt = `你是一个擅长解决客户问题的客服助手。
+请根据以下上下文信息来个性化你的回答，并记住用户偏好和过往的交互。
+
+${context}`
+
+  const systemMessage = new SystemMessage(systemPrompt)
+
+  // 4. 合并消息并调用 LLM
+  const fullMessages = [systemMessage, ...messages]
+  const response = await llm.invoke(fullMessages)
+
+  return { messages: [response] }
 }
 ```
 
-### 2.3 工作流程
+最终输出：
 
 ```
-用户输入 → 召回相关记忆 → 注入 System Prompt → LLM 生成回答
-              ↓
-    （从 mem0 向量库语义搜索）
+小明的爸爸是小张，他喜欢喝大窑。有什么其他需要帮忙的吗？
 ```
-
-## 三、对比与选择
-
-| 特性 | Memory (MemorySaver) | Mem0 (Qdrant) |
-|------|---------------------|---------------|
-| 记忆范围 | 单次会话 | 跨会话/永久 |
-| 存储方式 | 内存 | 向量数据库 |
-| 召回方式 | 全量状态恢复 | 语义相似度搜索 |
-| 适用场景 | 多轮对话上下文 | 用户画像/偏好记忆 |
-| 依赖 | 无 | Qdrant + Embedding |
-
-**选择建议**：
-
-- 如果只需要保持对话连贯性（比如多轮问答），用 **MemorySaver**
-- 如果需要记住用户的长期偏好和历史信息，用 **Mem0**
-- 两者可以组合使用：MemorySaver 管理会话状态，Mem0 管理用户画像
-
-## 四、运行示例
-
-### Memory 示例
-
-```bash
-cd js
-pnpm memory:dev
-```
-
-输出：
-```
-工具名称: add_tool
-工具参数: { original_amount: 100 }
-充值成功！充值后餐卡余额为110元。
-
-工具名称: add_tool
-工具参数: { original_amount: 110 }
-充值成功！充值后餐卡余额为120元。
-```
-
-注意第二次充值时，工具参数是110（上一轮的结果），而不是100。
-
-### Mem0 示例
-
-```bash
-cd js
-pnpm mem0:dev
-```
-
-需要确保 Qdrant 服务已启动，并设置 `TONGYI_API_KEY` 环境变量。
 
 ## 五、总结
 
-记忆是让 AI Agent 变得"聪明"的关键能力之一。MemorySaver 提供了轻量的会话状态管理，Mem0 提供了强大的长期记忆服务。根据实际需求选择合适的方案，或者组合使用，可以显著提升 Agent 的用户体验。
+记忆是让 AI Agent 变得“聪明”的关键能力之一。
+- **MemorySaver** 提供了轻量的会话状态管理，确保对话不掉线。
+- **Qdrant (Mem0 模式)** 提供了强大的长期记忆能力，让 Agent 真正“认识”用户。
 
+根据实际需求选择合适的方案，或者组合使用，可以显著提升 Agent 的用户体验。让你的 Agent 不再是“金鱼”，而是一个真正懂用户的智能助理。
