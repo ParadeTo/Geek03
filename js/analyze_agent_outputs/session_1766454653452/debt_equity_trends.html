@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>资产负债情况趋势分析</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>资产负债情况趋势分析</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "资产负债情况趋势分析", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "top": "bottom", "data": ["资产负债率", "权益乘数"] },
+  "xAxis": { "type": "category", "data": ["2022", "2023", "2024"] },
+  "yAxis": { "type": "value", "name": "百分比（%）" },
+  "series": [
+    { "name": "资产负债率", "type": "line", "data": [33.19, 34.38, 30.48], "itemStyle": {"color": "#ee6666"} },
+    { "name": "权益乘数", "type": "line", "data": [1.50, 1.52, 1.44], "itemStyle": {"color": "#fac858"} }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

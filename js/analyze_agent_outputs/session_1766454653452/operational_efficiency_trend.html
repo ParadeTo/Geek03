@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>运营效率指标趋势</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>运营效率指标趋势</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "运营效率指标趋势", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "data": ["应收账款周转天数", "存货周转天数"], "top": "bottom" },
+  "xAxis": { "type": "category", "data": ["2022", "2023", "2024"] },
+  "yAxis": { "type": "value", "name": "天数" },
+  "series": [
+    { "name": "应收账款周转天数", "type": "line", "data": [0.01, 0.00, 0.00], "lineStyle": { "color": "#5470c6" } },
+    { "name": "存货周转天数", "type": "line", "data": [497.03, 484.52, 521.81], "lineStyle": { "color": "#91cc75" } }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

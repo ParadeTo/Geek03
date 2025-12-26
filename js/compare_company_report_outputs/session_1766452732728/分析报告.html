@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>四川沱牌舍得集团有限公司 财务分析报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .report {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; border-bottom: 3px solid #5470c6; padding-bottom: 10px; }
+    h2 { color: #16213e; margin-top: 30px; }
+    h3 { color: #0f3460; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #5470c6; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="report" id="report"></div>
+  <script>
+    const mdContent = "# 财务数据对比分析报告\n\n## 分析概述\n本报告通过对贵州茅台和四川沱牌舍得过去三年的财务数据进行深入分析，关注了关键财务指标如净利率、毛利率和净资产收益率，以比较两家公司在盈利能力和股东回报上的表现。\n\n## 关键发现\n1. **净利率**：\n   - 贵州茅台在过去三年保持了较高且稳定的净利率，约为52%，体现了其较强的盈利能力。\n   - 四川沱牌舍得则在2024年净利率显著下降至6.35%，显示出盈利能力的减弱，可能受到市场竞争或内部成本管理的压力。\n\n2. **毛利率**：\n   - 贵州茅台的毛利率始终维持在91%以上，表现出强大的成本控制和优秀的产品定价策略。\n   - 四川沱牌舍得在2024年的毛利率降至65.52%，表示其在成本控制上可能面临挑战。\n\n3. **净资产收益率**：\n   - 贵州茅台的净资产收益率持续增长，达到36.99%，进一步证实其在资本利用上的高效。\n   - 与之相比，四川沱牌舍得的净资产收益率在2024年显著下跌至5.08%，可能影响股东信心和投资回报。\n\n## 图表分析\n\n### 净利率对比\n<div id=\"chart_net_profit_margin\"></div>\n从图中可以看出，贵州茅台的净利率在过去三年相对稳定，而四川沱牌舍得则在2024年出现显著下降。\n\n### 毛利率对比\n<div id=\"chart_gross_profit_margin\"></div>\n贵州茅台的毛利率始终表现强劲，而四川沱牌舍得在2023年和2024年下降，提示可能的成本管理问题。\n\n### 净资产收益率对比\n<div id=\"chart_return_on_equity\"></div>\n贵州茅台的股东回报效率良好，而四川沱牌舍得需要加强股东资本的管理和利用，以提升投资者的信任。\n\n## 结论与建议\n综合分析，贵州茅台在盈利能力和股东回报效率方面表现优异，建议继续保持现有的成本控制和定价策略。\n四川沱牌舍得则需重点关注降低成本和加强内部管理，以改善其盈利能力和股东回报，从而提升市场竞争力。";
+    document.getElementById('report').innerHTML = marked.parse(mdContent);
+    
+    // 加载图表: 贵州茅台与五粮液毛利率对比
+    fetch('./gross_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 贵州茅台与五粮液净利率对比
+    fetch('./net_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 贵州茅台与五粮液净资产收益率对比
+    fetch('./roe_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_roe_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 贵州茅台 vs 泸州老窖 财务比率对比（2024）
+    fetch('./financial_ratios_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_financial_ratios_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率与净利率的年度变化比较
+    fetch('./gross_net_profit_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_net_profit_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 流动性比率对比（2024）
+    fetch('./liquidity_ratios_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_liquidity_ratios_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率变化对比
+    fetch('./gross_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净利率变化对比
+    fetch('./net_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净资产收益率变化对比
+    fetch('./return_on_equity_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_return_on_equity_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 流动比率变化对比
+    fetch('./current_ratio_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_current_ratio_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率对比
+    fetch('./gross_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净利率对比
+    fetch('./net_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净利率对比
+    fetch('./net_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率对比
+    fetch('./gross_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净资产收益率对比
+    fetch('./return_on_equity_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_return_on_equity_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+  </script>
+</body>
+</html>

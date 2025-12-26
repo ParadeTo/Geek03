@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>山西杏花村汾酒厂股份有限公司 财务分析报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .report {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; border-bottom: 3px solid #5470c6; padding-bottom: 10px; }
+    h2 { color: #16213e; margin-top: 30px; }
+    h3 { color: #0f3460; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #5470c6; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="report" id="report"></div>
+  <script>
+    const mdContent = "# 山西杏花村汾酒厂股份有限公司 财务数据分析报告\n\n## 分析概述\n本报告分析了山西杏花村汾酒厂股份有限公司在过去三年的财务数据，涵盖财务比率、杠杆与流动性、以及运营效率多个方面。\n\n## 关键发现\n1. **盈利能力增强**：公司的毛利率保持在较高水平，净利率和净资产收益率有良好的上升趋势，反映出盈利能力的提升。\n2. **财务健康改善**：资产负债率逐年降低，同时流动比率和速动比率逐步上升，表明公司在提高财务稳定性上取得进展。\n3. **库存管理挑战**：虽然应收账款周转天数接近于零，显示出较高的运营效率，但存货周转天数的增加可能成为库存管理的潜在风险。\n\n## 图表分析\n\n### 主要财务比率趋势\n<div id=\"chart_key_financial_ratios_trend\" style=\"width:100%;height:400px;margin:20px 0;\"></div>\n从图中可以看出，公司的毛利率总体保持稳定，净利率和净资产收益率均有所上升，显示出公司盈利能力的逐步增强。\n\n### 财务杠杆与流动性比率趋势\n<div id=\"chart_leverage_liquidity_ratios_trend\" style=\"width:100%;height:400px;margin:20px 0;\"></div>\n本图显示公司的资产负债率逐年下降，而流动比率和速动比率则逐渐上升，表明公司的负债比例降低，流动性增强，财务健康状况有所改善。\n\n### 运营效率指标趋势\n<div id=\"chart_operational_efficiency_trend\" style=\"width:100%;height:400px;margin:20px 0;\"></div>\n应收账款周转天数趋于零，显示出其应收账款管理效率较高，但存货周转天数有所上升，提示公司可能面临库存管理上的挑战。\n\n## 结论与建议\n综合以上分析，公司在盈利能力和财务健康方面表现较好，但需特别注意库存管理的问题。建议进一步优化库存管理流程，提高存货周转效率，以减少潜在的财务风险。";
+    document.getElementById('report').innerHTML = marked.parse(mdContent);
+    
+    // 加载图表: 净资产收益率趋势
+    fetch('./roe_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_roe_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 流动比率趋势
+    fetch('./current_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_current_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率趋势
+    fetch('./gross_profit_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_profit_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 现金流匹配度趋势
+    fetch('./cash_flow_matching_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_cash_flow_matching_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 财务比率综合趋势
+    fetch('./financial_ratios_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_financial_ratios_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 利润指标趋势分析
+    fetch('./profitability_trends.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_profitability_trends');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债情况趋势分析
+    fetch('./debt_equity_trends.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_debt_equity_trends');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 短期偿债能力趋势分析
+    fetch('./liquidity_ratios_trends.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_liquidity_ratios_trends');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 主要财务比率趋势
+    fetch('./key_financial_ratios_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_key_financial_ratios_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 财务杠杆与流动性比率趋势
+    fetch('./leverage_liquidity_ratios_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_leverage_liquidity_ratios_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 运营效率指标趋势
+    fetch('./operational_efficiency_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_operational_efficiency_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+  </script>
+</body>
+</html>

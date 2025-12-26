@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>四川沱牌舍得集团有限公司 财务分析报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .report {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; border-bottom: 3px solid #5470c6; padding-bottom: 10px; }
+    h2 { color: #16213e; margin-top: 30px; }
+    h3 { color: #0f3460; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #5470c6; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="report" id="report"></div>
+  <script>
+    const mdContent = "# 四川沱牌舍得集团有限公司财务数据分析报告\n\n## 分析概述\n本报告分析了四川沱牌舍得集团有限公司在2022至2024年度的财务数据，重点关注了公司主要财务指标的趋势变化。\n\n## 关键发现\n1. **毛利率趋势**：毛利率在2023年达到74.57%的高峰后，2024年下降至65.52%。这种波动可能由市场环境变化或成本上升导致。\n2. **净利率趋势**：净利率从2022年的28.08%下降到2023年的25.03%，并在2024年显著下滑至6.35%，反映了公司盈利能力面临挑战。\n3. **净资产收益率（ROE）趋势**：ROE在2022年为26.63%，随后逐年下降至2024年的5.08%，显示股东回报率降低。\n4. **资产负债率趋势**：资产负债率在2024年上升到39.58%，表明公司财务杠杆和风险增加。\n\n## 图表分析\n\n### 毛利率趋势\n<div id=\"chart_gross_margin\"></div>\n毛利率的下降可能反映了内部效率问题或者外部市场压力的增加。\n\n### 净利率趋势\n<div id=\"chart_net_profit_margin\"></div>\n净利率的显著下滑表明需要重新审视公司的成本管控和定价策略。\n\n### 净资产收益率趋势\n<div id=\"chart_return_on_equity\"></div>\n持续下降的ROE暗示公司在提高股东价值方面遇到困难。\n\n### 资产负债率趋势\n<div id=\"chart_debt_to_asset_ratio\"></div>\n资产负债率的上升揭示公司正倚重于债务融资，需谨慎管理财务风险。\n\n## 结论与建议\n综合以上财务数据和趋势分析，四川沱牌舍得集团有限公司应重点关注盈利能力的提升和财务结构的优化。建议进行成本控制优化，加强市场竞争力，并审慎管理财务杠杆，以降低财务风险。";
+    document.getElementById('report').innerHTML = marked.parse(mdContent);
+    
+    // 加载图表: 净资产收益率趋势
+    fetch('./roe_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_roe_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债率趋势
+    fetch('./asset_liability_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_asset_liability_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 现金流匹配度趋势
+    fetch('./cash_flow_matching_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_cash_flow_matching_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债率趋势
+    fetch('./debt_to_asset_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_debt_to_asset_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净利率趋势
+    fetch('./net_profit_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 流动比率趋势
+    fetch('./current_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_current_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 速动比率趋势
+    fetch('./quick_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_quick_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 盈利能力趋势分析
+    fetch('./profitability_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_profitability_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债结构与偿债能力趋势
+    fetch('./liquidity_structure_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_liquidity_structure_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 营运效率趋势分析
+    fetch('./operational_efficiency_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_operational_efficiency_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 现金流表现趋势分析
+    fetch('./cash_flow_performance_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_cash_flow_performance_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率趋势分析
+    fetch('./gross_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净利率趋势分析
+    fetch('./net_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净资产收益率趋势分析
+    fetch('./roe_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_roe_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债率趋势分析
+    fetch('./debt_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_debt_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 财务比率趋势分析
+    fetch('./financial_ratios_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_financial_ratios_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债率趋势
+    fetch('./asset_liability_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_asset_liability_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 毛利率趋势
+    fetch('./gross_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净利率趋势
+    fetch('./net_profit_margin_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 净资产收益率趋势
+    fetch('./return_on_equity_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_return_on_equity_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债率趋势
+    fetch('./debt_to_asset_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_debt_to_asset_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+  </script>
+</body>
+</html>

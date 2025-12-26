@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>泸州老窖股份有限公司 财务分析报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .report {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; border-bottom: 3px solid #5470c6; padding-bottom: 10px; }
+    h2 { color: #16213e; margin-top: 30px; }
+    h3 { color: #0f3460; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #5470c6; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="report" id="report"></div>
+  <script>
+    const mdContent = "# 财务数据分析报告\n\n## 分析概述\n本报告对基准公司与泸州老窖股份有限公司在过去三年的财务数据进行对比分析，重点分析了毛利率、净利率、净资产收益率和流动比率，以评估基准公司相对于主要竞争者的财务状况和经营优势。\n\n## 关键发现\n1. **毛利率优势**：基准公司在过去三年中保持了超过90%的毛利率，显示了强大的成本控制能力和市场竞争力。\n2. **净利率稳定**：尽管面对行业波动，基准公司的净利率始终保持在50%以上，高于对比公司，展现了稳固的盈利能力。\n3. **净资产收益率增长**：基准公司逐年提升的净资产收益率显示了良好的股东回报能力，相较于对比公司的波动表现，基准公司更具吸引力。\n4. **流动比率变动**：基准公司流动比率在2023年出现显著下降，需关注其短期偿债能力变化，而对比公司则持续保持较高水平。\n\n## 图表分析\n\n### 基准公司与对比公司毛利率对比\n<div id=\"chart_gross_profit_margin\"></div>\n基准公司毛利率在三年内保持稳定，在90%以上，而对比公司毛利率略低但在逐年提升。\n\n### 基准公司与对比公司净利率对比\n<div id=\"chart_net_profit_margin\"></div>\n基准公司在三年期间净利率稳定于50%以上，对比公司则相对较低，但呈上升趋势。\n\n### 基准公司与对比公司净资产收益率对比\n<div id=\"chart_return_on_equity\"></div>\n基准公司净资产收益率呈上涨趋势，且逐年高于对比公司，显示了更强的股东回报能力。\n\n### 基准公司与对比公司流动比率对比\n<div id=\"chart_current_ratio\"></div>\n基准公司流动比率在2023和2024年大幅下降，显示流动资产相对于流动负债大幅减少，而对比公司则维持相对高水平。\n\n## 结论与建议\n综合以上分析，基准公司在盈利能力和股东回报上表现出色。然而，流动比率的显著下降可能暗示需要强化短期资金管理，以避免潜在的财务风险。同时，继续保持在成本控制和高盈利率上的优势，将进一步增强其市场竞争力。";
+    document.getElementById('report').innerHTML = marked.parse(mdContent);
+    
+    // 加载图表: 净资产收益率对比
+    fetch('./roe_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_roe_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 基准公司与对比公司毛利率对比
+    fetch('./gross_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_gross_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 基准公司与对比公司净利率对比
+    fetch('./net_profit_margin_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_net_profit_margin_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 基准公司与对比公司净资产收益率对比
+    fetch('./return_on_equity_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_return_on_equity_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 基准公司与对比公司流动比率对比
+    fetch('./current_ratio_comparison.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_current_ratio_comparison');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+  </script>
+</body>
+</html>

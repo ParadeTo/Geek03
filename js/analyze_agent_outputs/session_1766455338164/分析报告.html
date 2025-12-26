@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> 财务分析报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .report {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; border-bottom: 3px solid #5470c6; padding-bottom: 10px; }
+    h2 { color: #16213e; margin-top: 30px; }
+    h3 { color: #0f3460; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #5470c6; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="report" id="report"></div>
+  <script>
+    const mdContent = "# 财务数据分析报告\n\n## 分析概述\n本报告对公司近三年财务数据进行了深入分析，通过对净资产收益率、资产负债率、流动比率以及速动比率的趋势图，全面了解了公司的财务表现及健康状况。\n\n## 关键发现\n1. **净资产收益率稳步增长**：公司在2022年至2024年间，净资产收益率从31.75%增长至36.99%，展示了优异的资本使用效率和盈利能力。\n2. **资产负债率稳定适中**：资产负债率保持在较低水平，2023年有所下降，表明公司负债管理得当，财务风险较低。\n3. **流动性改善显著**：2022年的流动比率极高，随着2023和2024年的调整，回到正常水平，显示出公司资产结构的调整和优化。\n4. **速动能力保持良好**：速动比率的下降与流动比率一致，但仍然显示出公司能够快速应对短期义务。\n\n## 图表分析\n\n### 净资产收益率趋势\n<div id=\"chart_revenue\"></div>\n从图中可以看出，净资产收益率逐年稳步增长，展现了公司对股东资本的高回报能力。\n\n### 资产负债率趋势\n<div id=\"chart_debt\"></div>\n资产负债率在2023年有所下降，2024年略有回升，整体保持在较低水平，表明公司财务杠杆适度，风险相对较小。\n\n### 流动比率趋势\n<div id=\"chart_current\"></div>\n2022年的流动比率极高，2023和2024年显著下降至正常水平，表明公司在有效管理流动资产和负债。\n\n### 速动比率趋势\n<div id=\"chart_quick\"></div>\n速动比率的趋势与流动比率相似，显示出公司有足够的速动资产以应对短期财务义务。\n\n## 结论与建议\n综合以上分析，公司的财务状况健康且稳健，建议继续优化资本结构，保证适度的财务杠杆水平，以支持持续增长。";
+    document.getElementById('report').innerHTML = marked.parse(mdContent);
+    
+    // 加载图表: 净资产收益率趋势
+    fetch('./return_on_equity_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_return_on_equity_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 资产负债率趋势
+    fetch('./debt_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_debt_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 流动比率趋势
+    fetch('./current_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_current_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+
+    // 加载图表: 速动比率趋势
+    fetch('./quick_ratio_trend.html')
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const script = doc.querySelector('script:last-of-type');
+        if (script) {
+          const optionMatch = script.textContent.match(/var option = ([\s\S]*?);\s*chart\.setOption/);
+          if (optionMatch) {
+            const container = document.getElementById('chart_quick_ratio_trend');
+            if (container) {
+              const chart = echarts.init(container);
+              chart.setOption(JSON.parse(optionMatch[1]));
+            }
+          }
+        }
+      });
+  </script>
+</body>
+</html>

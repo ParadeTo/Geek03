@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>毛利率与净利率趋势分析</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>毛利率与净利率趋势分析</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "毛利率与净利率趋势分析", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "data": ["毛利率", "净利率"], "top": "bottom" },
+  "xAxis": { "type": "category", "data": ["2021", "2022", "2023"] },
+  "yAxis": { "type": "value", "name": "百分比(%)" },
+  "series": [
+    { "name": "毛利率", "type": "line", "data": [92.00, 91.80, 91.96], "lineStyle": { "color": "#5470c6" } },
+    { "name": "净利率", "type": "line", "data": [52.00, 52.30, 52.49], "lineStyle": { "color": "#91cc75" } }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

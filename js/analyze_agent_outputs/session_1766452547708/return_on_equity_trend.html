@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>净资产收益率趋势</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>净资产收益率趋势</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "净资产收益率趋势", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "xAxis": { "type": "category", "data": ["2022", "2023", "2024"] },
+  "yAxis": { "type": "value", "name": "净资产收益率（%）" },
+  "series": [
+    { "name": "净资产收益率", "type": "line", "data": [26.63, 24.49, 5.08], "lineStyle": { "color": "#91cc75" } }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

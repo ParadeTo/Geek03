@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>盈利能力趋势分析</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>盈利能力趋势分析</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "盈利能力趋势分析", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "top": "bottom", "data": ["毛利率", "净利率", "净资产收益率"] },
+  "xAxis": { "type": "category", "data": ["2022", "2023", "2024"] },
+  "yAxis": { "type": "value", "name": "百分比 (%)" },
+  "series": [
+    { "name": "毛利率", "type": "line", "data": [86.57, 88.58, 87.53] },
+    { "name": "净利率", "type": "line", "data": [41.44, 43.95, 43.27] },
+    { "name": "净资产收益率", "type": "line", "data": [30.30, 32.00, 28.43] }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

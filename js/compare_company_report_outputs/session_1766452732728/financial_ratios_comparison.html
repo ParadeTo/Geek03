@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>贵州茅台 vs 泸州老窖 财务比率对比（2024）</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>贵州茅台 vs 泸州老窖 财务比率对比（2024）</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "贵州茅台 vs 泸州老窖 财务比率对比（2024）", "left": "center" },
+  "legend": { "top": "bottom" },
+  "tooltip": {},
+  "radar": {
+    "indicator": [
+      { "name": "毛利率(%)", "max": 100 },
+      { "name": "净利率(%)", "max": 100 },
+      { "name": "净资产收益率(%)", "max": 100 },
+      { "name": "资产负债率(%)", "max": 100 },
+      { "name": "总资产周转率(%)", "max": 100 }
+    ]
+  },
+  "series": [
+    {
+      "name": "财务比率对比",
+      "type": "radar",
+      "data": [
+        {
+          "value": [91.94, 52.27, 36.99, 19.04, 60.00],
+          "name": "贵州茅台"
+        },
+        {
+          "value": [87.53, 43.27, 28.43, 30.48, 47.00],
+          "name": "泸州老窖"
+        }
+      ]
+    }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

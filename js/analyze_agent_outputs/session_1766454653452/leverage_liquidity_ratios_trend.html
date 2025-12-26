@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>财务杠杆与流动性比率趋势</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>财务杠杆与流动性比率趋势</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "财务杠杆与流动性比率趋势", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "data": ["资产负债率", "流动比率", "速动比率"], "top": "bottom" },
+  "xAxis": { "type": "category", "data": ["2022", "2023", "2024"] },
+  "yAxis": { "type": "value", "name": "百分比或倍数" },
+  "series": [
+    { "name": "资产负债率", "type": "line", "data": [40.73, 35.88, 34.19], "lineStyle": { "color": "#5470c6" } },
+    { "name": "流动比率", "type": "line", "data": [197.00, 228.00, 245.00], "lineStyle": { "color": "#91cc75" } },
+    { "name": "速动比率", "type": "line", "data": [132.00, 152.00, 171.00], "lineStyle": { "color": "#fac858" } }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

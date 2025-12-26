@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>现金流表现趋势分析</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>现金流表现趋势分析</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "现金流表现趋势分析", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "top": "bottom", "data": ["现金流匹配度", "销售现金比率"] },
+  "xAxis": { "type": "category", "data": ["2022", "2023", "2024"] },
+  "yAxis": { "type": "value", "name": "百分比" },
+  "series": [
+    { "name": "现金流匹配度", "type": "line", "data": [79.00, 80.00, 142.00] },
+    { "name": "销售现金比率", "type": "line", "data": [null, 35.20, 61.00] }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

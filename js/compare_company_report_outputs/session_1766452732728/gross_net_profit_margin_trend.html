@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>毛利率与净利率的年度变化比较</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>毛利率与净利率的年度变化比较</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "毛利率与净利率的年度变化比较", "left": "center" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "top": "bottom" },
+  "xAxis": { 
+    "type": "category",
+    "data": ["2022", "2023", "2024"]
+  },
+  "yAxis": { "type": "value", "name": "%" },
+  "series": [
+    {
+      "name": "贵州茅台 毛利率",
+      "type": "bar",
+      "stack": "毛利率",
+      "data": [91.87, 91.96, 91.94]
+    },
+    {
+      "name": "泸州老窖 毛利率",
+      "type": "bar",
+      "stack": "毛利率",
+      "data": [86.57, 88.58, 87.53]
+    },
+    {
+      "name": "贵州茅台 净利率",
+      "type": "bar",
+      "stack": "净利率",
+      "data": [52.48, 52.49, 52.27]
+    },
+    {
+      "name": "泸州老窖 净利率",
+      "type": "bar",
+      "stack": "净利率",
+      "data": [41.44, 43.95, 43.27]
+    }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>

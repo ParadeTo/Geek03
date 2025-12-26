@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>财务比率综合趋势</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: 'Microsoft YaHei', sans-serif; }
+    #chart { width: 100%; height: 500px; }
+    h1 { text-align: center; color: #333; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>财务比率综合趋势</h1>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var option = {
+  "title": { "text": "财务比率综合趋势", "left": "center" },
+  "tooltip": {},
+  "legend": { "data": ["2022", "2023", "2024"], "bottom": 10 },
+  "radar": {
+    "indicator": [
+      { "name": "毛利率", "max": 100 },
+      { "name": "净利率", "max": 100 },
+      { "name": "净资产收益率", "max": 100 },
+      { "name": "资产负债率", "max": 100 },
+      { "name": "流动比率", "max": 500 },
+      { "name": "速动比率", "max": 500 }
+    ]
+  },
+  "series": [
+    {
+      "name": "财务比率",
+      "type": "radar",
+      "data": [
+        {
+          "value": [75.42, 37.81, 23.41, 23.59, 3.85, 3.40],
+          "name": "2022"
+        },
+        {
+          "value": [75.80, 37.85, 23.32, 20.00, 450.00, 397.00],
+          "name": "2023"
+        },
+        {
+          "value": [77.06, 37.22, 23.90, 27.55, 325.00, 289.00],
+          "name": "2024"
+        }
+      ]
+    }
+  ]
+};
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+  </script>
+</body>
+</html>
